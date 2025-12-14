@@ -1,52 +1,134 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="dual_ur3e_with_grippers">
-  <!-- 导入UR宏定义 -->
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="dual_arm_robot">
+  <!-- Import Xacro macros -->
   <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
-  
-  <!-- 导入Robotiq夹爪宏定义 -->
-  <xacro:include filename="$(find robotiq_85_description)/urdf/robotiq_85_gripper.urdf.xacro"/>
-  
-  <!-- 左臂UR3e -->
+  <xacro:include filename="$(find robotiq_85_description)/urdf/robotiq_85_gripper_macro.urdf.xacro"/>
+  <!-- World frame -->
+  <link name="world"/>
+  <!-- Base table - 2m x 2m  -->
+  <joint name="world_to_table" type="fixed">
+    <parent link="world"/>
+    <child link="table_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <link name="table_link">
+    <visual>
+      <origin xyz="0 0 0.75" rpy="0 0 0"/>
+      <geometry>
+        <box size="2.0 2.0 0.05"/>
+      </geometry>
+      <material name="table_material">
+        <color rgba="0.9 0.8 0.6 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.75" rpy="0 0 0"/>
+      <geometry>
+        <box size="2.0 2.0 0.05"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="30"/>
+      <origin xyz="0 0 0.75" rpy="0 0 0"/>
+      <inertia ixx="10" ixy="0" ixz="0" iyy="10" iyz="0" izz="20"/>
+    </inertial>
+  </link>
+  <!-- Left arm base mount - 位于 (0.5, 0.5) -->
+  <joint name="table_to_left_base" type="fixed">
+    <parent link="table_link"/>
+    <child link="left_base_mount"/>
+    <origin xyz="0.5 0.5 0.775" rpy="0 0 0"/>
+  </joint>
+  <link name="left_base_mount">
+    <visual>
+      <origin xyz="0 0 0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.02"/>
+      </geometry>
+      <material name="base_material">
+        <color rgba="0.3 0.3 0.3 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.02"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2"/>
+      <origin xyz="0 0 0.01" rpy="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+  </link>
+  <!-- Right arm base mount - 位于 (-0.5, 0.5) -->
+  <joint name="table_to_right_base" type="fixed">
+    <parent link="table_link"/>
+    <child link="right_base_mount"/>
+    <origin xyz="-0.5 0.5 0.775" rpy="0 0 0"/>
+  </joint>
+  <link name="right_base_mount">
+    <visual>
+      <origin xyz="0 0 0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.02"/>
+      </geometry>
+      <material name="base_material">
+        <color rgba="0.3 0.3 0.3 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.02"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2"/>
+      <origin xyz="0 0 0.01" rpy="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+  </link>
+  <!-- Left UR5 arm -->
   <xacro:ur_robot
-    name="left_arm"
+    name="left_ur5"
     tf_prefix="left_"
-    parent="world"
-    joint_limits_parameters_file="$(find ur_description)/config/ur3e/joint_limits.yaml"
-    kinematics_parameters_file="$(find ur_description)/config/ur3e/default_kinematics.yaml"
-    physical_parameters_file="$(find ur_description)/config/ur3e/physical_parameters.yaml"
-    visual_parameters_file="$(find ur_description)/config/ur3e/visual_parameters.yaml"
-    transmission_hw_interface=""
+    parent="left_base_mount"
+    joint_limits_parameters_file="$(find ur_description)/config/ur5/joint_limits.yaml"
+    kinematics_parameters_file="$(find ur_description)/config/ur5/default_kinematics.yaml"
+    physical_parameters_file="$(find ur_description)/config/ur5/physical_parameters.yaml"
+    visual_parameters_file="$(find ur_description)/config/ur5/visual_parameters.yaml"
     safety_limits="false"
     safety_pos_margin="0.15"
     safety_k_position="20">
-    <origin xyz="0 0.4 0" rpy="0 0 0"/>
+    <origin xyz="0 0 0.02" rpy="0 0 -1.5708"/>
   </xacro:ur_robot>
-  
-  <!-- 右臂UR3e -->
+  <!-- Right UR5 arm -->
   <xacro:ur_robot
-    name="right_arm"
+    name="right_ur5"
     tf_prefix="right_"
-    parent="world"
-    joint_limits_parameters_file="$(find ur_description)/config/ur3e/joint_limits.yaml"
-    kinematics_parameters_file="$(find ur_description)/config/ur3e/default_kinematics.yaml"
-    physical_parameters_file="$(find ur_description)/config/ur3e/physical_parameters.yaml"
-    visual_parameters_file="$(find ur_description)/config/ur3e/visual_parameters.yaml"
-    transmission_hw_interface=""
+    parent="right_base_mount"
+    joint_limits_parameters_file="$(find ur_description)/config/ur5/joint_limits.yaml"
+    kinematics_parameters_file="$(find ur_description)/config/ur5/default_kinematics.yaml"
+    physical_parameters_file="$(find ur_description)/config/ur5/physical_parameters.yaml"
+    visual_parameters_file="$(find ur_description)/config/ur5/visual_parameters.yaml"
     safety_limits="false"
     safety_pos_margin="0.15"
     safety_k_position="20">
-    <origin xyz="0 -0.4 0" rpy="0 0 0"/>
+    <origin xyz="0 0 0.02" rpy="0 0 -1.5708"/>
   </xacro:ur_robot>
-  
-  <!-- 只添加左臂和右臂的夹爪，不要添加独立的夹爪 -->
-  <xacro:robotiq_85_gripper prefix="left_gripper_" parent="left_tool0">
+  <!-- Left arm robotiq gripper -->
+  <xacro:robotiq_85_gripper 
+    prefix="left_"
+    parent="left_tool0"
+    sim="true">
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </xacro:robotiq_85_gripper>
-  
-  <xacro:robotiq_85_gripper prefix="right_gripper_" parent="right_tool0">
+  <!-- Right arm robotiq gripper -->
+  <xacro:robotiq_85_gripper 
+    prefix="right_"
+    parent="right_tool0"
+    sim="true">
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </xacro:robotiq_85_gripper>
-  
-  <!-- 注意：这里不要包含没有前缀的robotiq夹爪！ -->
-  
 </robot>
