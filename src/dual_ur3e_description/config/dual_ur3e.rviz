@@ -56,167 +56,13 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: ''
-        base_platform:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        gripper_root_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_base_link_inertia:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_ee_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_flange:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_forearm_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_ft_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_gripper_robotiq_85_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_shoulder_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_tool0:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_arm_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_wrist_1_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_wrist_2_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_wrist_3_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_base_link_inertia:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_ee_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_flange:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_forearm_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_ft_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_robotiq_85_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_shoulder_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_tool0:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_arm_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_wrist_1_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_wrist_2_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_wrist_3_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        world:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ''
       Update Interval: 0
       Value: true
       Visual Enabled: true
+      Tf Update Rate: 10
     - Class: rviz_default_plugins/TF
       Enabled: true
       Frame Timeout: 15
@@ -228,13 +74,7 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        world:
-          base_platform:
-            {}
-          left_base_link:
-            {}
-          gripper_root_link:
-            {}
+        world: {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -254,12 +94,10 @@ Visualization Manager:
       Hide Inactive: true
     - Class: rviz_default_plugins/Measure
       Hide Inactive: true
-    - Class: rviz_default_plugins/ClassicMeasure
-      Hide Inactive: true
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 3.5
+      Distance: 2.5
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -268,16 +106,16 @@ Visualization Manager:
       Focal Point:
         X: 0
         Y: 0
-        Z: 0.5
+        Z: 0
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.785
-      Target Frame: <Fixed Frame>
+      Pitch: 1.0
+      Target Frame: world
       Value: Orbit (rviz_default_plugins)
-      Yaw: 0.785
+      Yaw: 1.0
     Saved Views: {}
   Window Geometry:
     Displays:
@@ -296,7 +134,3 @@ Visualization Manager:
       collapsed: false
       height: 1716
       width: 720
-    "":
-      collapsed: false
-      height: 1962
-      width: 2560
