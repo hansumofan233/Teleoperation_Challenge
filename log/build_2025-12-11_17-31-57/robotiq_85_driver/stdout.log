@@ -1,0 +1,59 @@
+running egg_info
+creating ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info
+writing ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/PKG-INFO
+writing dependency_links to ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/dependency_links.txt
+writing entry points to ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/entry_points.txt
+writing requirements to ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/requires.txt
+writing top-level names to ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/top_level.txt
+writing manifest file '../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/SOURCES.txt'
+reading manifest file '../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/SOURCES.txt'
+writing manifest file '../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+copying robotiq_85_driver/robotiq_85_test_close.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+copying robotiq_85_driver/robotiq_85_test.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+copying robotiq_85_driver/robotiq_85_driver.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+copying robotiq_85_driver/__init__.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+copying robotiq_85_driver/single_robotiq_85_action_server.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+creating /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver
+copying robotiq_85_driver/driver/gripper_io.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver
+copying robotiq_85_driver/driver/robotiq_85_gripper.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver
+copying robotiq_85_driver/driver/__init__.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver
+copying robotiq_85_driver/driver/modbus_crc.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver
+running install
+running install_lib
+creating /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/robotiq_85_test_close.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/robotiq_85_test.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/robotiq_85_driver.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/__init__.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+creating /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver
+copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver/gripper_io.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver
+copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver/robotiq_85_gripper.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver
+copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver/__init__.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver
+copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver/modbus_crc.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver
+copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/single_robotiq_85_action_server.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/robotiq_85_test_close.py to robotiq_85_test_close.cpython-310.pyc
+byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/robotiq_85_test.py to robotiq_85_test.cpython-310.pyc
+byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/robotiq_85_driver.py to robotiq_85_driver.cpython-310.pyc
+byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver/gripper_io.py to gripper_io.cpython-310.pyc
+byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver/robotiq_85_gripper.py to robotiq_85_gripper.cpython-310.pyc
+byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver/modbus_crc.py to modbus_crc.cpython-310.pyc
+byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/single_robotiq_85_action_server.py to single_robotiq_85_action_server.cpython-310.pyc
+running install_data
+creating /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/share/ament_index/resource_index/packages
+copying resource/robotiq_85_driver -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/share/ament_index/resource_index/packages
+copying package.xml -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/share/robotiq_85_driver
+creating /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/share/robotiq_85_driver/launch
+copying launch/gripper_driver.launch.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/share/robotiq_85_driver/launch
+running install_egg_info
+Copying ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info to /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver-1.0.0-py3.10.egg-info
+running install_scripts
+Installing robotiq_85_driver script to /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/robotiq_85_driver
+Installing robotiq_85_test script to /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/robotiq_85_driver
+Installing robotiq_85_test_close script to /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/robotiq_85_driver
+Installing single_robotiq_85_action_server script to /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/robotiq_85_driver
+writing list of installed files to '/home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/install.log'

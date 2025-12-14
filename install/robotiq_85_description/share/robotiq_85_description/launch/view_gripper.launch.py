@@ -1,0 +1,1 @@
+/home/cnbot/Teleoperation_Challenge/src/robotiq_85_gripper/robotiq_85_description/launch/view_gripper.launch.py

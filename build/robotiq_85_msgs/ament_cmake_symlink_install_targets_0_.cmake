@@ -1,0 +1,1 @@
+ament_cmake_symlink_install_targets("TARGET_FILES" "/home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs/rosidl_generator_py/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so" "TARGETS" "robotiq_85_msgs__rosidl_typesupport_fastrtps_c__pyext" "DESTINATION" "lib/python3.10/site-packages/robotiq_85_msgs")

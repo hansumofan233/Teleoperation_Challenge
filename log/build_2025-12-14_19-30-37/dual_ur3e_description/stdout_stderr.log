@@ -1,0 +1,22 @@
+-- Install configuration: ""
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description//urdf
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description//urdf/dual_ur3e.urdf.xacro
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description//launch
+-- Installing: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description//launch/dual_ur3e_display.launch.py
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description//config
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description//config/dual_ur3e.rviz
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/ament_index/resource_index/package_run_dependencies/dual_ur3e_description
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/ament_index/resource_index/parent_prefix_path/dual_ur3e_description
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/environment/ament_prefix_path.sh
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/environment/ament_prefix_path.dsv
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/environment/path.sh
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/environment/path.dsv
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/local_setup.bash
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/local_setup.sh
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/local_setup.zsh
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/local_setup.dsv
+-- Installing: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/package.dsv
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/ament_index/resource_index/packages/dual_ur3e_description
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/cmake/dual_ur3e_descriptionConfig.cmake
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/cmake/dual_ur3e_descriptionConfig-version.cmake
+-- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description/package.xml

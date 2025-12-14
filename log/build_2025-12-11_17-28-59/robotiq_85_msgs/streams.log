@@ -1,0 +1,36 @@
+[0.007s] Invoking command in '/home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs': CMAKE_PREFIX_PATH=/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake /home/cnbot/Teleoperation_Challenge/src/robotiq_85_gripper/robotiq_85_msgs -DCMAKE_INSTALL_PREFIX=/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs
+[0.016s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.188s] -- Found Python3: /home/cnbot/miniconda3/envs/env_6dofarms/bin/python3 (found version "3.10.19") found components: Interpreter 
+[0.229s] -- Found builtin_interfaces: 1.2.2 (/opt/ros/humble/share/builtin_interfaces/cmake)
+[0.239s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.240s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.244s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.249s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.255s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.260s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[0.264s] -- Found std_msgs: 4.9.0 (/opt/ros/humble/share/std_msgs/cmake)
+[0.401s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[0.560s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.619s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.629s] -- Found PythonInterp: /home/cnbot/miniconda3/envs/env_6dofarms/bin/python3 (found suitable version "3.10.19", minimum required is "3.6") 
+[0.629s] -- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+[0.639s] -- Found PythonLibs: /home/cnbot/miniconda3/envs/env_6dofarms/lib/libpython3.10.so (found suitable version "3.10.19", minimum required is "3.5") 
+[0.639s] -- Using PYTHON_EXECUTABLE: /home/cnbot/miniconda3/envs/env_6dofarms/bin/python3
+[0.639s] -- Using PYTHON_INCLUDE_DIRS: /home/cnbot/miniconda3/envs/env_6dofarms/include/python3.10
+[0.639s] -- Using PYTHON_LIBRARIES: /home/cnbot/miniconda3/envs/env_6dofarms/lib/libpython3.10.so
+[0.649s] -- Found PythonExtra: .so  
+[0.672s] Traceback (most recent call last):
+[0.672s]   File "<string>", line 1, in <module>
+[0.672s] ModuleNotFoundError: No module named 'numpy'
+[0.672s] [31mCMake Error at /opt/ros/humble/share/rosidl_generator_py/cmake/rosidl_generator_py_generate_interfaces.cmake:204 (message):
+[0.672s]   execute_process(/home/cnbot/miniconda3/envs/env_6dofarms/bin/python3 -c
+[0.672s]   'import numpy;print(numpy.get_include())') returned error code 1
+[0.672s] Call Stack (most recent call first):
+[0.672s]   /opt/ros/humble/share/ament_cmake_core/cmake/core/ament_execute_extensions.cmake:48 (include)
+[0.672s]   /opt/ros/humble/share/rosidl_cmake/cmake/rosidl_generate_interfaces.cmake:286 (ament_execute_extensions)
+[0.672s]   CMakeLists.txt:14 (rosidl_generate_interfaces)
+[0.672s] 
+[0.672s] [0m
+[0.673s] -- Configuring incomplete, errors occurred!
+[0.673s] See also "/home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs/CMakeFiles/CMakeOutput.log".
+[0.677s] Invoked command in '/home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs' returned '1': CMAKE_PREFIX_PATH=/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake /home/cnbot/Teleoperation_Challenge/src/robotiq_85_gripper/robotiq_85_msgs -DCMAKE_INSTALL_PREFIX=/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs

@@ -1,0 +1,15 @@
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/ament_index/resource_index/package_run_dependencies/robotiq_85_gripper
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/ament_index/resource_index/parent_prefix_path/robotiq_85_gripper
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/environment/ament_prefix_path.sh
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/environment/ament_prefix_path.dsv
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/environment/path.sh
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/environment/path.dsv
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/local_setup.bash
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/local_setup.sh
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/local_setup.zsh
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/local_setup.dsv
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/package.dsv
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/ament_index/resource_index/packages/robotiq_85_gripper
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/cmake/robotiq_85_gripperConfig.cmake
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/cmake/robotiq_85_gripperConfig-version.cmake
+/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper/share/robotiq_85_gripper/package.xml
