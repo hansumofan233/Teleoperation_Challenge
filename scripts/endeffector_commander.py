@@ -32,6 +32,20 @@ class EndEffectorCommander(Node):
             10
         )
         
+        # 订阅夹爪命令
+        self.left_gripper_sub = self.create_subscription(
+            Float64MultiArray,
+            '/left_arm/gripper_command',
+            self.left_gripper_callback,
+            10
+        )
+        self.right_gripper_sub = self.create_subscription(
+            Float64MultiArray,
+            '/right_arm/gripper_command',
+            self.right_gripper_callback,
+            10
+        )
+        
         # 发布关节轨迹命令
         self.left_joint_pub = self.create_publisher(
             JointTrajectory,
@@ -191,11 +205,12 @@ class EndEffectorCommander(Node):
     
     def left_ee_callback(self, msg):
         """处理左臂末端执行器目标"""
-        if len(msg.data) < 4:
-            self.get_logger().warn('接收到的消息数据不足4个元素')
+        if len(msg.data) < 3:
+            self.get_logger().warn('接收到的消息数据不足3个元素')
             return
         
-        target_x, target_y, target_z, target_rot_z = msg.data[:4]
+        target_x, target_y, target_z = msg.data[:3]
+        target_rot_z = 0.0  # 默认旋转角度
         
         # 调试信息
         if not hasattr(self, '_left_callback_count'):
@@ -236,12 +251,50 @@ class EndEffectorCommander(Node):
         except Exception as e:
             self.get_logger().error(f'左臂IK求解失败: {e}')
     
-    def right_ee_callback(self, msg):
-        """处理右臂末端执行器目标"""
-        if len(msg.data) < 4:
+    def left_gripper_callback(self, msg):
+        """处理左臂夹爪命令"""
+        if len(msg.data) < 1:
             return
         
-        target_x, target_y, target_z, target_rot_z = msg.data[:4]
+        gripper_position = msg.data[0]  # 0.0=关闭, 1.0=打开
+        
+        # 更新夹爪关节状态
+        # Robotiq 85夹爪: 0.0=关闭, 0.8=完全打开
+        gripper_value = gripper_position * 0.8
+        
+        self.all_joint_positions['left_robotiq_85_left_knuckle_joint'] = gripper_value
+        self.all_joint_positions['left_robotiq_85_right_knuckle_joint'] = gripper_value
+        self.all_joint_positions['left_robotiq_85_left_inner_knuckle_joint'] = gripper_value
+        self.all_joint_positions['left_robotiq_85_right_inner_knuckle_joint'] = gripper_value
+        self.all_joint_positions['left_robotiq_85_left_finger_tip_joint'] = gripper_value
+        self.all_joint_positions['left_robotiq_85_right_finger_tip_joint'] = gripper_value
+        
+        self.get_logger().info(f'左夹爪: {gripper_position:.2f}')
+    
+    def right_gripper_callback(self, msg):
+        """处理右臂夹爪命令"""
+        if len(msg.data) < 1:
+            return
+        
+        gripper_position = msg.data[0]
+        gripper_value = gripper_position * 0.8
+        
+        self.all_joint_positions['right_robotiq_85_left_knuckle_joint'] = gripper_value
+        self.all_joint_positions['right_robotiq_85_right_knuckle_joint'] = gripper_value
+        self.all_joint_positions['right_robotiq_85_left_inner_knuckle_joint'] = gripper_value
+        self.all_joint_positions['right_robotiq_85_right_inner_knuckle_joint'] = gripper_value
+        self.all_joint_positions['right_robotiq_85_left_finger_tip_joint'] = gripper_value
+        self.all_joint_positions['right_robotiq_85_right_finger_tip_joint'] = gripper_value
+        
+        self.get_logger().info(f'右夹爪: {gripper_position:.2f}')
+    
+    def right_ee_callback(self, msg):
+        """处理右臂末端执行器目标"""
+        if len(msg.data) < 3:
+            return
+        
+        target_x, target_y, target_z = msg.data[:3]
+        target_rot_z = 0.0
         
         # 调试信息
         if not hasattr(self, '_right_callback_count'):

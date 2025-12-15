@@ -32,10 +32,10 @@ class TeleopEndEffectorControl(Node):
         )
         
         # 参数配置
-        self.declare_parameter('workspace_x_min', 0.2)  # 工作空间X范围 (m)
-        self.declare_parameter('workspace_x_max', 0.8)
-        self.declare_parameter('workspace_y_min', -0.3)  # 工作空间Y范围 (m)
-        self.declare_parameter('workspace_y_max', 0.3)
+        self.declare_parameter('workspace_x_min', 0.3)  # 工作空间X范围 (m) - 远离基座
+        self.declare_parameter('workspace_x_max', 0.9)  # 扩大前方范围
+        self.declare_parameter('workspace_y_min', -0.4)  # 工作空间Y范围 (m) - 扩大左右范围
+        self.declare_parameter('workspace_y_max', 0.4)
         self.declare_parameter('workspace_z', 0.9)  # 固定Z高度 (m)
         self.declare_parameter('rotation_sensitivity', 2.0)  # 旋转灵敏度
         self.declare_parameter('position_smoothing', 0.3)  # 位置平滑系数
@@ -51,8 +51,21 @@ class TeleopEndEffectorControl(Node):
         self.smoothing = self.get_parameter('position_smoothing').value
         camera_id = self.get_parameter('camera_id').value
         
-        # 初始化MediaPipe
+        # 添加夹爪控制发布器
+        self.left_gripper_pub = self.create_publisher(
+            Float64MultiArray,
+            '/left_arm/gripper_command',
+            10
+        )
+        self.right_gripper_pub = self.create_publisher(
+            Float64MultiArray,
+            '/right_arm/gripper_command',
+            10
+        )
+        
+        # 初始化MediaPipe Pose和Hands
         self.mp_pose = mp.solutions.pose
+        self.mp_hands = mp.solutions.hands
         self.pose = self.mp_pose.Pose(
             static_image_mode=False,
             model_complexity=1,
@@ -60,9 +73,15 @@ class TeleopEndEffectorControl(Node):
             min_detection_confidence=0.6,
             min_tracking_confidence=0.5
         )
+        self.hands = self.mp_hands.Hands(
+            static_image_mode=False,
+            max_num_hands=2,
+            min_detection_confidence=0.6,
+            min_tracking_confidence=0.5
+        )
         self.mp_draw = mp.solutions.drawing_utils
         
-        # 关键点索引
+        # 姿态关键点索引
         self.keypoints = {
             'LEFT_SHOULDER': 11,
             'LEFT_ELBOW': 13,
@@ -71,6 +90,12 @@ class TeleopEndEffectorControl(Node):
             'RIGHT_ELBOW': 14,
             'RIGHT_WRIST': 16,
         }
+        
+        # Z轴控制范围 (根据手腕高度)
+        self.declare_parameter('workspace_z_min', 0.5)  # 最低高度
+        self.declare_parameter('workspace_z_max', 1.2)  # 最高高度
+        self.workspace_z_min = self.get_parameter('workspace_z_min').value
+        self.workspace_z_max = self.get_parameter('workspace_z_max').value
         
         # 初始化摄像头
         self.cap = cv2.VideoCapture(camera_id)
@@ -81,26 +106,26 @@ class TeleopEndEffectorControl(Node):
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         
-        # 状态变量
+        # 状态变量 - 机械臂状态
         self.left_arm_state = {
-            'position': np.array([0.5, 0.3, self.workspace_z]),  # 左臂初始位置
-            'rotation': 0.0,
+            'position': np.array([0.6, 0.3, 0.7]),  # 左臂初始位置
             'prev_position': None,
-            'prev_rotation': None
+            'gripper_open': True,  # 夹爪状态
+            'prev_gripper_open': True
         }
         self.right_arm_state = {
-            'position': np.array([0.5, -0.3, self.workspace_z]),  # 右臂初始位置
-            'rotation': 0.0,
+            'position': np.array([0.6, -0.3, 0.7]),  # 右臂初始位置
             'prev_position': None,
-            'prev_rotation': None
+            'gripper_open': True,
+            'prev_gripper_open': True
         }
         
-        # 校准参考点(用于建立映射关系)
-        self.calibration_mode = False
-        self.calibration_data = {
-            'left': {'shoulder': None, 'reference_wrist': None},
-            'right': {'shoulder': None, 'reference_wrist': None}
+        # 手势识别状态（用于去抖动）
+        self.gesture_buffer = {
+            'left': [],  # 存储最近N帧的手势
+            'right': []
         }
+        self.gesture_buffer_size = 5  # 缓冲区大小
         
         # 创建定时器处理视频流
         self.timer = self.create_timer(0.033, self.process_frame)  # ~30Hz
@@ -108,63 +133,95 @@ class TeleopEndEffectorControl(Node):
         self.get_logger().info('末端执行器遥操作控制节点已启动')
         self.get_logger().info(f'工作空间: X[{self.workspace_x_min}, {self.workspace_x_max}], '
                               f'Y[{self.workspace_y_min}, {self.workspace_y_max}], '
-                              f'Z={self.workspace_z}')
-        self.get_logger().info('按键说明: q-退出, c-校准, r-重置, s-保存截图')
+                              f'Z[{self.workspace_z_min}, {self.workspace_z_max}]')
+        self.get_logger().info('=== 使用说明 ===')
+        self.get_logger().info('手臂控制: 直接映射模式')
+        self.get_logger().info('  - 向前伸手 → 机械臂向前移动')
+        self.get_logger().info('  - 左右移动 → 机械臂左右移动')
+        self.get_logger().info('  - 抬起手臂 → 机械臂上升')
+        self.get_logger().info('手势控制:')
+        self.get_logger().info('  - 张开手掌 → 打开夹爪')
+        self.get_logger().info('  - 握拳 → 关闭夹爪')
+        self.get_logger().info('按键: q-退出 | s-保存截图')
     
-    def calibrate(self, pose_landmarks):
-        """校准模式: 记录T姿态作为参考"""
-        landmarks = pose_landmarks.landmark
+    def recognize_hand_gesture(self, hand_landmarks):
+        """识别手势：返回'open'(张开)或'closed'(握拳)"""
+        if hand_landmarks is None:
+            return None
         
-        # 记录左臂参考点
-        if landmarks[self.keypoints['LEFT_WRIST']].visibility > 0.5:
-            self.calibration_data['left']['shoulder'] = np.array([
-                landmarks[self.keypoints['LEFT_SHOULDER']].x,
-                landmarks[self.keypoints['LEFT_SHOULDER']].y,
-                landmarks[self.keypoints['LEFT_SHOULDER']].z
-            ])
-            self.calibration_data['left']['reference_wrist'] = np.array([
-                landmarks[self.keypoints['LEFT_WRIST']].x,
-                landmarks[self.keypoints['LEFT_WRIST']].y,
-                landmarks[self.keypoints['LEFT_WRIST']].z
-            ])
+        landmarks = hand_landmarks.landmark
         
-        # 记录右臂参考点
-        if landmarks[self.keypoints['RIGHT_WRIST']].visibility > 0.5:
-            self.calibration_data['right']['shoulder'] = np.array([
-                landmarks[self.keypoints['RIGHT_SHOULDER']].x,
-                landmarks[self.keypoints['RIGHT_SHOULDER']].y,
-                landmarks[self.keypoints['RIGHT_SHOULDER']].z
-            ])
-            self.calibration_data['right']['reference_wrist'] = np.array([
-                landmarks[self.keypoints['RIGHT_WRIST']].x,
-                landmarks[self.keypoints['RIGHT_WRIST']].y,
-                landmarks[self.keypoints['RIGHT_WRIST']].z
-            ])
+        # 计算手指伸展程度
+        # 使用指尖和手掌的距离判断
+        palm_center = landmarks[0]  # 手腕
         
-        self.get_logger().info('校准完成! 当前姿态已设为参考位置')
+        # 检查四个手指（食指、中指、无名指、小指）是否伸直
+        finger_tips = [8, 12, 16, 20]  # 指尖
+        finger_mcp = [5, 9, 13, 17]   # 手指根部
+        
+        extended_fingers = 0
+        for tip_idx, mcp_idx in zip(finger_tips, finger_mcp):
+            tip = landmarks[tip_idx]
+            mcp = landmarks[mcp_idx]
+            palm = palm_center
+            
+            # 计算距离
+            tip_dist = np.sqrt((tip.x - palm.x)**2 + (tip.y - palm.y)**2)
+            mcp_dist = np.sqrt((mcp.x - palm.x)**2 + (mcp.y - palm.y)**2)
+            
+            # 如果指尖距离明显大于根部距离，认为手指伸直
+            if tip_dist > mcp_dist * 1.3:
+                extended_fingers += 1
+        
+        # 判断手势
+        if extended_fingers >= 3:  # 至少3个手指伸直 → 手掌张开
+            return 'open'
+        elif extended_fingers <= 1:  # 最多1个手指伸直 → 握拳
+            return 'closed'
+        else:
+            return None  # 中间状态，不确定
+    
+    def update_gesture_buffer(self, arm, gesture):
+        """更新手势缓冲区并返回稳定的手势（去抖动）"""
+        buffer = self.gesture_buffer[arm]
+        
+        if gesture is not None:
+            buffer.append(gesture)
+        
+        # 保持缓冲区大小
+        if len(buffer) > self.gesture_buffer_size:
+            buffer.pop(0)
+        
+        # 如果缓冲区中大多数是同一手势，返回该手势
+        if len(buffer) >= self.gesture_buffer_size:
+            open_count = buffer.count('open')
+            closed_count = buffer.count('closed')
+            
+            if open_count > self.gesture_buffer_size * 0.7:
+                return True  # 张开
+            elif closed_count > self.gesture_buffer_size * 0.7:
+                return False  # 握拳
+        
+        return None  # 不确定
     
     def calculate_endeffector_pose(self, pose_landmarks, arm='left'):
         """
-        计算末端执行器位姿 (2D位置 + 1D旋转)
+        计算末端执行器位姿 (3D位置 - X, Y, Z)
         
-        映射策略:
-        - X轴: 手腕相对肩膀的前后移动 -> 机械臂X轴移动
-        - Y轴: 手腕相对肩膀的左右移动 -> 机械臂Y轴移动
-        - 旋转: 前臂方向角度 -> 末端执行器绕Z轴旋转
+        新映射策略:
+        - X轴: 手腕前后位置 -> 机械臂X轴移动
+        - Y轴: 手腕左右位置 -> 机械臂Y轴移动
+        - Z轴: 手腕高度 -> 机械臂Z轴移动（抬手=上升）
         """
         landmarks = pose_landmarks.landmark
         
         # 选择对应手臂的关键点
         if arm == 'left':
             shoulder_idx = self.keypoints['LEFT_SHOULDER']
-            elbow_idx = self.keypoints['LEFT_ELBOW']
             wrist_idx = self.keypoints['LEFT_WRIST']
-            calib = self.calibration_data['left']
         else:
             shoulder_idx = self.keypoints['RIGHT_SHOULDER']
-            elbow_idx = self.keypoints['RIGHT_ELBOW']
             wrist_idx = self.keypoints['RIGHT_WRIST']
-            calib = self.calibration_data['right']
         
         # 检查可见性
         if landmarks[wrist_idx].visibility < 0.5 or landmarks[shoulder_idx].visibility < 0.5:
@@ -172,49 +229,36 @@ class TeleopEndEffectorControl(Node):
         
         # 获取当前位置
         shoulder = np.array([landmarks[shoulder_idx].x, landmarks[shoulder_idx].y, landmarks[shoulder_idx].z])
-        elbow = np.array([landmarks[elbow_idx].x, landmarks[elbow_idx].y, landmarks[elbow_idx].z])
         wrist = np.array([landmarks[wrist_idx].x, landmarks[wrist_idx].y, landmarks[wrist_idx].z])
         
-        # 如果已校准,计算相对位移
-        if calib['shoulder'] is not None and calib['reference_wrist'] is not None:
-            # 手腕相对肩膀的位移
-            current_relative = wrist - shoulder
-            reference_relative = calib['reference_wrist'] - calib['shoulder']
-            delta = current_relative - reference_relative
-            
-            # 映射到机器人工作空间
-            # MediaPipe坐标: x(左-右), y(上-下), z(前-后)
-            # 机器人坐标: X(前-后), Y(左-右), Z(上-下)
-            
-            # X轴: 手臂前后移动 (Z分量)
-            x = np.interp(-delta[2], [-0.3, 0.3], [self.workspace_x_min, self.workspace_x_max])
-            
-            # Y轴: 手臂左右移动 (X分量)
-            if arm == 'left':
-                y = np.interp(delta[0], [-0.3, 0.3], [self.workspace_y_min, self.workspace_y_max])
-            else:
-                y = np.interp(-delta[0], [-0.3, 0.3], [self.workspace_y_min, self.workspace_y_max])
-            
-            # Z轴: 固定高度
-            z = self.workspace_z
-            
-        else:
-            # 未校准时使用默认映射
-            x = np.interp(1.0 - wrist[2], [0.0, 1.0], [self.workspace_x_min, self.workspace_x_max])
-            if arm == 'left':
-                y = np.interp(wrist[0], [0.3, 0.7], [self.workspace_y_min, self.workspace_y_max])
-            else:
-                y = np.interp(wrist[0], [0.3, 0.7], [self.workspace_y_max, self.workspace_y_min])
-            z = self.workspace_z
+        # 使用相对于肩膀的位置进行映射
+        relative = wrist - shoulder
         
-        # 计算旋转角度 (基于前臂方向)
-        forearm_vector = wrist - elbow
-        # 计算在XY平面上的投影角度
-        rotation = np.arctan2(forearm_vector[1], forearm_vector[0]) * self.rotation_sensitivity
+        # X轴: 手臂前后伸展
+        # MediaPipe Z: 负值=向前，正值=向后
+        x = np.interp(-relative[2], [-0.5, 0.3], [self.workspace_x_min, self.workspace_x_max])
+        
+        # Y轴: 手臂左右位置
+        if arm == 'left':
+            # 左臂：手向左移动→机械臂向左移动
+            y = np.interp(relative[0], [-0.2, 0.5], [self.workspace_y_min, self.workspace_y_max])
+        else:
+            # 右臂：手向右移动→机械臂向右移动
+            y = np.interp(-relative[0], [-0.2, 0.5], [self.workspace_y_min, self.workspace_y_max])
+        
+        # Z轴: 手腕高度（抬手=上升）
+        # MediaPipe Y: 0(上) 到 1(下)，需要反转
+        # 使用手腕的绝对Y坐标
+        z = np.interp(1.0 - wrist[1], [0.3, 0.9], [self.workspace_z_min, self.workspace_z_max])
+        
+        # 限制在工作空间内
+        x = np.clip(x, self.workspace_x_min, self.workspace_x_max)
+        y = np.clip(y, self.workspace_y_min, self.workspace_y_max)
+        z = np.clip(z, self.workspace_z_min, self.workspace_z_max)
         
         position = np.array([x, y, z])
         
-        return {'position': position, 'rotation': rotation}
+        return {'position': position}
     
     def smooth_motion(self, current, previous, alpha=None):
         """运动平滑滤波"""
@@ -233,75 +277,106 @@ class TeleopEndEffectorControl(Node):
             state = self.right_arm_state
             publisher = self.right_ee_pub
         
-        # 构建消息: [x, y, z, rotation_z]
+        # 构建消息: [x, y, z]
         msg = Float64MultiArray()
         msg.data = [
             float(state['position'][0]),
             float(state['position'][1]),
-            float(state['position'][2]),
-            float(state['rotation'])
+            float(state['position'][2])
         ]
         
         publisher.publish(msg)
     
-    def draw_visualization(self, image, pose_landmarks):
-        """绘制可视化信息"""
-        if pose_landmarks is None:
-            return image
+    def publish_gripper_command(self, arm='left', open_gripper=True):
+        """发布夹爪命令"""
+        if arm == 'left':
+            publisher = self.left_gripper_pub
+            state = self.left_arm_state
+        else:
+            publisher = self.right_gripper_pub
+            state = self.right_arm_state
         
-        landmarks = pose_landmarks.landmark
+        # 避免重复发送相同命令
+        if state['prev_gripper_open'] == open_gripper:
+            return
+        
+        # 构建消息: [gripper_position] (0.0=关闭, 1.0=打开)
+        msg = Float64MultiArray()
+        msg.data = [1.0 if open_gripper else 0.0]
+        
+        publisher.publish(msg)
+        state['prev_gripper_open'] = open_gripper
+        
+        self.get_logger().info(f'{arm}夹爪: {"打开" if open_gripper else "关闭"}')
+    
+    def draw_visualization(self, image, pose_landmarks, hands_results):
+        """绘制可视化信息"""
         h, w, c = image.shape
         
-        # 绘制手臂骨架
-        arm_connections = [
-            (11, 13), (13, 15),  # 左臂
-            (12, 14), (14, 16),  # 右臂
-            (11, 12)  # 肩膀连线
-        ]
+        # 绘制姿态骨架
+        if pose_landmarks is not None:
+            landmarks = pose_landmarks.landmark
+            
+            # 绘制手臂骨架
+            arm_connections = [
+                (11, 13), (13, 15),  # 左臂
+                (12, 14), (14, 16),  # 右臂
+                (11, 12)  # 肩膀连线
+            ]
+            
+            for connection in arm_connections:
+                start_idx, end_idx = connection
+                if landmarks[start_idx].visibility > 0.5 and landmarks[end_idx].visibility > 0.5:
+                    start_x = int(landmarks[start_idx].x * w)
+                    start_y = int(landmarks[start_idx].y * h)
+                    end_x = int(landmarks[end_idx].x * w)
+                    end_y = int(landmarks[end_idx].y * h)
+                    cv2.line(image, (start_x, start_y), (end_x, end_y), (255, 255, 255), 3)
+            
+            # 绘制关键点
+            for name, idx in self.keypoints.items():
+                if landmarks[idx].visibility > 0.5:
+                    x = int(landmarks[idx].x * w)
+                    y = int(landmarks[idx].y * h)
+                    
+                    if 'SHOULDER' in name:
+                        color = (255, 0, 0)  # 蓝色
+                    elif 'ELBOW' in name:
+                        color = (0, 255, 0)  # 绿色
+                    else:  # WRIST
+                        color = (0, 0, 255)  # 红色
+                    
+                    cv2.circle(image, (x, y), 8, color, -1)
         
-        for connection in arm_connections:
-            start_idx, end_idx = connection
-            if landmarks[start_idx].visibility > 0.5 and landmarks[end_idx].visibility > 0.5:
-                start_x = int(landmarks[start_idx].x * w)
-                start_y = int(landmarks[start_idx].y * h)
-                end_x = int(landmarks[end_idx].x * w)
-                end_y = int(landmarks[end_idx].y * h)
-                cv2.line(image, (start_x, start_y), (end_x, end_y), (255, 255, 255), 3)
-        
-        # 绘制关键点
-        for name, idx in self.keypoints.items():
-            if landmarks[idx].visibility > 0.5:
-                x = int(landmarks[idx].x * w)
-                y = int(landmarks[idx].y * h)
-                
-                if 'SHOULDER' in name:
-                    color = (255, 0, 0)  # 蓝色
-                elif 'ELBOW' in name:
-                    color = (0, 255, 0)  # 绿色
-                else:  # WRIST
-                    color = (0, 0, 255)  # 红色
-                
-                cv2.circle(image, (x, y), 8, color, -1)
+        # 绘制手部关键点
+        if hands_results and hands_results.multi_hand_landmarks:
+            for hand_landmarks in hands_results.multi_hand_landmarks:
+                self.mp_draw.draw_landmarks(
+                    image,
+                    hand_landmarks,
+                    self.mp_hands.HAND_CONNECTIONS,
+                    self.mp_draw.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
+                    self.mp_draw.DrawingSpec(color=(255, 255, 255), thickness=2)
+                )
         
         # 显示状态信息
         info_y = 30
-        cv2.putText(image, f"Left EE: ({self.left_arm_state['position'][0]:.2f}, "
-                   f"{self.left_arm_state['position'][1]:.2f}) Rot: {np.degrees(self.left_arm_state['rotation']):.1f}deg",
+        left_gripper_status = "打开" if self.left_arm_state['gripper_open'] else "关闭"
+        cv2.putText(image, f"Left: ({self.left_arm_state['position'][0]:.2f}, "
+                   f"{self.left_arm_state['position'][1]:.2f}, {self.left_arm_state['position'][2]:.2f}) "
+                   f"Gripper: {left_gripper_status}",
                    (10, info_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
         info_y += 25
         
-        cv2.putText(image, f"Right EE: ({self.right_arm_state['position'][0]:.2f}, "
-                   f"{self.right_arm_state['position'][1]:.2f}) Rot: {np.degrees(self.right_arm_state['rotation']):.1f}deg",
+        right_gripper_status = "打开" if self.right_arm_state['gripper_open'] else "关闭"
+        cv2.putText(image, f"Right: ({self.right_arm_state['position'][0]:.2f}, "
+                   f"{self.right_arm_state['position'][1]:.2f}, {self.right_arm_state['position'][2]:.2f}) "
+                   f"Gripper: {right_gripper_status}",
                    (10, info_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
         info_y += 25
-        
-        # 校准状态
-        calib_status = "CALIBRATED" if self.calibration_data['left']['shoulder'] is not None else "NOT CALIBRATED"
-        cv2.putText(image, f"Status: {calib_status}", (10, info_y), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0) if "CALIBRATED" in calib_status else (0, 0, 255), 2)
         
         # 控制说明
-        cv2.putText(image, "q:Quit | c:Calibrate | r:Reset | s:Save", 
+        cv2.putText(image, "q:Quit | s:Save | Open Palm=Open Gripper | Fist=Close Gripper", 
                    (10, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
         return image
@@ -317,79 +392,70 @@ class TeleopEndEffectorControl(Node):
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image_rgb.flags.writeable = False
         
-        # 姿态检测
-        results = self.pose.process(image_rgb)
+        # 姿态和手部检测
+        pose_results = self.pose.process(image_rgb)
+        hands_results = self.hands.process(image_rgb)
         
         image_rgb.flags.writeable = True
         image = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
         
-        # 处理检测结果
-        if results.pose_landmarks:
+        # 处理姿态检测结果
+        if pose_results.pose_landmarks:
             # 计算末端执行器位姿
-            left_pose = self.calculate_endeffector_pose(results.pose_landmarks, 'left')
-            right_pose = self.calculate_endeffector_pose(results.pose_landmarks, 'right')
+            left_pose = self.calculate_endeffector_pose(pose_results.pose_landmarks, 'left')
+            right_pose = self.calculate_endeffector_pose(pose_results.pose_landmarks, 'right')
             
-            # 调试信息(每2秒输出一次)
-            if not hasattr(self, '_last_debug_time'):
-                self._last_debug_time = 0
-            if time.time() - self._last_debug_time > 2.0:
-                self.get_logger().info(f'检测状态: 左臂={left_pose is not None}, 右臂={right_pose is not None}')
-                self._last_debug_time = time.time()
-            
-            # 更新左臂状态
+            # 更新左臂位置
             if left_pose is not None:
                 self.left_arm_state['position'] = self.smooth_motion(
                     left_pose['position'], 
                     self.left_arm_state['prev_position']
                 )
-                self.left_arm_state['rotation'] = self.smooth_motion(
-                    left_pose['rotation'],
-                    self.left_arm_state['prev_rotation'],
-                    alpha=0.5
-                )
                 self.left_arm_state['prev_position'] = self.left_arm_state['position'].copy()
-                self.left_arm_state['prev_rotation'] = self.left_arm_state['rotation']
                 
                 # 发布控制命令
                 self.publish_endeffector_command('left')
-            else:
-                if not hasattr(self, '_left_warn_time'):
-                    self._left_warn_time = 0
-                if time.time() - self._left_warn_time > 5.0:
-                    self.get_logger().warn('左臂不可见或可见性太低')
-                    self._left_warn_time = time.time()
             
-            # 更新右臂状态
+            # 更新右臂位置
             if right_pose is not None:
                 self.right_arm_state['position'] = self.smooth_motion(
                     right_pose['position'],
                     self.right_arm_state['prev_position']
                 )
-                self.right_arm_state['rotation'] = self.smooth_motion(
-                    right_pose['rotation'],
-                    self.right_arm_state['prev_rotation'],
-                    alpha=0.5
-                )
                 self.right_arm_state['prev_position'] = self.right_arm_state['position'].copy()
-                self.right_arm_state['prev_rotation'] = self.right_arm_state['rotation']
                 
                 # 发布控制命令
                 self.publish_endeffector_command('right')
-            else:
-                if not hasattr(self, '_right_warn_time'):
-                    self._right_warn_time = 0
-                if time.time() - self._right_warn_time > 5.0:
-                    self.get_logger().warn('右臂不可见或可见性太低')
-                    self._right_warn_time = time.time()
-        else:
-            if not hasattr(self, '_no_pose_warn_time'):
-                self._no_pose_warn_time = 0
-            if time.time() - self._no_pose_warn_time > 5.0:
-                self.get_logger().warn('未检测到任何人体姿态')
-                self._no_pose_warn_time = time.time()
+        
+        # 处理手部手势识别
+        if hands_results.multi_hand_landmarks and hands_results.multi_handedness:
+            for hand_landmarks, handedness in zip(hands_results.multi_hand_landmarks, hands_results.multi_handedness):
+                # 确定是左手还是右手（注意镜像翻转）
+                hand_label = handedness.classification[0].label
+                
+                # MediaPipe返回的是相机视角，已经翻转过了
+                if hand_label == "Left":
+                    arm = "right"  # 左手在镜像后对应右臂
+                else:
+                    arm = "left"   # 右手在镜像后对应左臂
+                
+                # 识别手势
+                gesture = self.recognize_hand_gesture(hand_landmarks)
+                stable_gesture = self.update_gesture_buffer(arm, gesture)
+                
+                # 根据稳定的手势更新夹爪状态
+                if stable_gesture is not None:
+                    if arm == 'left':
+                        if stable_gesture != self.left_arm_state['gripper_open']:
+                            self.left_arm_state['gripper_open'] = stable_gesture
+                            self.publish_gripper_command('left', stable_gesture)
+                    else:
+                        if stable_gesture != self.right_arm_state['gripper_open']:
+                            self.right_arm_state['gripper_open'] = stable_gesture
+                            self.publish_gripper_command('right', stable_gesture)
         
         # 绘制可视化
-        image = self.draw_visualization(image, results.pose_landmarks)
+        image = self.draw_visualization(image, pose_results.pose_landmarks, hands_results)
         
         # 显示图像
         cv2.imshow('Teleoperation End-Effector Control', image)
@@ -399,15 +465,6 @@ class TeleopEndEffectorControl(Node):
         if key == ord('q'):
             self.get_logger().info('退出程序')
             rclpy.shutdown()
-        elif key == ord('c'):
-            if results.pose_landmarks:
-                self.calibrate(results.pose_landmarks)
-        elif key == ord('r'):
-            self.calibration_data = {
-                'left': {'shoulder': None, 'reference_wrist': None},
-                'right': {'shoulder': None, 'reference_wrist': None}
-            }
-            self.get_logger().info('校准数据已重置')
         elif key == ord('s'):
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             filename = f"teleop_capture_{timestamp}.jpg"
