@@ -116,6 +116,28 @@ class EndEffectorCommander(Node):
         self.left_current_joints = np.array([0.0, -np.pi/4, np.pi/2, -np.pi/4, -np.pi/2, 0.0])
         self.right_current_joints = np.array([0.0, -np.pi/4, np.pi/2, -np.pi/4, -np.pi/2, 0.0])
         
+        # 实际关节状态（从/joint_states读取）
+        self.left_actual_joints = None
+        self.right_actual_joints = None
+        
+        # 目标关节状态（发布的命令）
+        self.left_target_joints = None
+        self.right_target_joints = None
+        
+        # 关节平滑系数（减少抖动）
+        self.joint_smoothing = 0.3  # 30%新值，70%旧值
+        
+        # 调试计数器
+        self.debug_counter = 0
+        
+        # 上一次的目标位置（用于检测变化）
+        self.left_last_target = None
+        self.right_last_target = None
+        self.position_change_threshold = 0.005  # 5mm的变化阈值
+        
+        # 创建定时器定期发布完整的关节状态（低频率，用于RViz初始化）
+        self.joint_state_timer = self.create_timer(1.0, self.publish_complete_joint_state)
+        
         # 基座位置和旋转（从URDF）
         # 两个机械臂都旋转了-90度（-1.5708 rad），即逆时针旋转90度
         self.left_base_pos = np.array([0.5, 0.5, 0.775])
@@ -188,22 +210,27 @@ class EndEffectorCommander(Node):
             # 旋转误差
             rot_error = (fk_result[3] - target_rot_z)**2
             
-            # 关节变化惩罚(保持平滑)
-            joint_change = np.sum((joints - current_joints)**2) * 0.1
+            # 关节变化惩罚(增加权重保持平滑，减少抖动)
+            joint_change = np.sum((joints - current_joints)**2) * 0.5
             
-            return pos_error + rot_error * 0.5 + joint_change
+            # 关节速度惩罚（相邻关节角度差异）
+            joint_velocity = np.sum(np.diff(joints)**2) * 0.1
+            
+            return pos_error + rot_error * 0.5 + joint_change + joint_velocity
         
-        # 使用优化求解
+        # 使用优化求解，增加容差减少过度优化
         result = minimize(
             cost_function,
             current_joints,
             method='SLSQP',
             bounds=self.joint_limits,
-            options={'maxiter': 100, 'ftol': 1e-4}
+            options={'maxiter': 50, 'ftol': 1e-3}  # 减少迭代次数，提高容差
         )
         
         if result.success:
-            return result.x
+            # 对结果进行平滑处理，减少抖动
+            smoothed_joints = self.joint_smoothing * result.x + (1 - self.joint_smoothing) * current_joints
+            return smoothed_joints
         else:
             self.get_logger().warn('逆运动学求解失败,保持当前位置')
             return current_joints
@@ -222,13 +249,41 @@ class EndEffectorCommander(Node):
         return msg
     
     def publish_joint_state(self, joint_positions, joint_names):
-        """发布所有关节状态用于RViz可视化"""
+        """发布指定关节状态用于RViz可视化"""
         # 更新对应关节的位置
         for i, name in enumerate(joint_names):
             if name in self.all_joint_positions:
                 self.all_joint_positions[name] = joint_positions[i]
         
-        # 发布完整的关节状态
+        # 只发布当前更新的关节状态(包含夹爪关节)
+        # 确定是左臂还是右臂
+        if 'left' in joint_names[0]:
+            arm = 'left'
+        else:
+            arm = 'right'
+        
+        # 构建要发布的关节列表(只包含当前手臂的关节)
+        arm_joint_names = []
+        arm_joint_positions = []
+        
+        for name, position in self.all_joint_positions.items():
+            if arm in name:
+                arm_joint_names.append(name)
+                arm_joint_positions.append(position)
+        
+        # 发布当前手臂的关节状态
+        msg = JointState()
+        msg.header = Header()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.name = arm_joint_names
+        msg.position = arm_joint_positions
+        msg.velocity = []
+        msg.effort = []
+        
+        self.joint_state_pub.publish(msg)
+    
+    def publish_complete_joint_state(self):
+        """定期发布完整的关节状态（低频率，1Hz）"""
         msg = JointState()
         msg.header = Header()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -239,6 +294,49 @@ class EndEffectorCommander(Node):
         
         self.joint_state_pub.publish(msg)
     
+    def update_debug_counter(self):
+        """更新调试计数器,定期输出对比结果"""
+        self.debug_counter += 1
+        if self.debug_counter % 30 == 0:
+            self.compare_joint_states()
+    
+    def compare_joint_states(self):
+        """显示当前关节状态调试信息"""
+        self.get_logger().info('\n' + '='*80)
+        self.get_logger().info('当前关节状态 (每秒更新)')
+        self.get_logger().info('注意: RViz仿真模式下,显示的是命令值(即期望的实际值)')
+        self.get_logger().info('='*80)
+        
+        # 左臂状态
+        if self.left_target_joints is not None:
+            self.get_logger().info(f'\n左臂关节状态:')
+            self.get_logger().info(f'  关节角度: [{" ".join([f"{j:7.3f}" for j in self.left_target_joints])}]')
+            self.get_logger().info(f'  角度(度): [{" ".join([f"{np.degrees(j):7.1f}" for j in self.left_target_joints])}]')
+            
+            # 计算与上次的变化
+            if self.left_actual_joints is not None:
+                change = np.abs(self.left_target_joints - self.left_actual_joints)
+                max_change = np.max(change)
+                self.get_logger().info(f'  最大变化: {np.degrees(max_change):.2f}° (与上次比较)')
+                if max_change > 0.5:  # 大于0.5弧度（约28.6°）
+                    self.get_logger().warn(f'⚠️  左臂单帧变化过大: {np.degrees(max_change):.2f}° - 可能导致抖动')
+        
+        # 右臂状态
+        if self.right_target_joints is not None:
+            self.get_logger().info(f'\n右臂关节状态:')
+            self.get_logger().info(f'  关节角度: [{" ".join([f"{j:7.3f}" for j in self.right_target_joints])}]')
+            self.get_logger().info(f'  角度(度): [{" ".join([f"{np.degrees(j):7.1f}" for j in self.right_target_joints])}]')
+            
+            # 计算与上次的变化
+            if self.right_actual_joints is not None:
+                change = np.abs(self.right_target_joints - self.right_actual_joints)
+                max_change = np.max(change)
+                self.get_logger().info(f'  最大变化: {np.degrees(max_change):.2f}° (与上次比较)')
+                if max_change > 0.5:
+                    self.get_logger().warn(f'⚠️  右臂单帧变化过大: {np.degrees(max_change):.2f}° - 可能导致抖动')
+        
+        self.get_logger().info('='*80 + '\n')
+    
     def left_ee_callback(self, msg):
         """处理左臂末端执行器目标"""
         if len(msg.data) < 3:
@@ -247,6 +345,17 @@ class EndEffectorCommander(Node):
         
         target_x, target_y, target_z = msg.data[:3]
         target_rot_z = 0.0  # 默认旋转角度
+        
+        # 检查目标位置是否发生变化
+        current_target = np.array([target_x, target_y, target_z])
+        if self.left_last_target is not None:
+            position_change = np.linalg.norm(current_target - self.left_last_target)
+            if position_change < self.position_change_threshold:
+                # 位置变化太小，忽略此次更新
+                return
+        
+        # 更新上一次目标位置
+        self.left_last_target = current_target.copy()
         
         # 调试信息
         if not hasattr(self, '_left_callback_count'):
@@ -267,8 +376,17 @@ class EndEffectorCommander(Node):
                 self.left_current_joints, 'left'
             )
             
+            # 保存上一帧的关节状态用于对比变化
+            self.left_actual_joints = self.left_current_joints.copy()
+            
             # 更新当前状态
             self.left_current_joints = joint_positions
+            
+            # 保存目标关节状态
+            self.left_target_joints = joint_positions.copy()
+            
+            # 更新调试计数器
+            self.update_debug_counter()
             
             # 发布关节命令
             joint_names = [
@@ -282,6 +400,10 @@ class EndEffectorCommander(Node):
             
             trajectory_msg = self.create_joint_trajectory_msg(joint_positions, joint_names, 'left')
             self.left_joint_pub.publish(trajectory_msg)
+            
+            # 调试输出：发布的关节角度
+            if self._left_callback_count % 30 == 1:
+                self.get_logger().info(f'发布左臂关节命令: [{" ".join([f"{j:.3f}" for j in joint_positions])}]')
             
             # 发布关节状态用于RViz
             self.publish_joint_state(joint_positions, joint_names)
@@ -336,6 +458,17 @@ class EndEffectorCommander(Node):
         target_x, target_y, target_z = msg.data[:3]
         target_rot_z = 0.0
         
+        # 检查目标位置是否发生变化
+        current_target = np.array([target_x, target_y, target_z])
+        if self.right_last_target is not None:
+            position_change = np.linalg.norm(current_target - self.right_last_target)
+            if position_change < self.position_change_threshold:
+                # 位置变化太小，忽略此次更新
+                return
+        
+        # 更新上一次目标位置
+        self.right_last_target = current_target.copy()
+        
         # 调试信息
         if not hasattr(self, '_right_callback_count'):
             self._right_callback_count = 0
@@ -355,8 +488,14 @@ class EndEffectorCommander(Node):
                 self.right_current_joints, 'right'
             )
             
+            # 保存上一帧的关节状态用于对比变化
+            self.right_actual_joints = self.right_current_joints.copy()
+            
             # 更新当前状态
             self.right_current_joints = joint_positions
+            
+            # 保存目标关节状态
+            self.right_target_joints = joint_positions.copy()
             
             # 发布关节命令
             joint_names = [
@@ -370,6 +509,10 @@ class EndEffectorCommander(Node):
             
             trajectory_msg = self.create_joint_trajectory_msg(joint_positions, joint_names, 'right')
             self.right_joint_pub.publish(trajectory_msg)
+            
+            # 调试输出：发布的关节角度
+            if self._right_callback_count % 30 == 1:
+                self.get_logger().info(f'发布右臂关节命令: [{" ".join([f"{j:.3f}" for j in joint_positions])}]')
             
             # 发布关节状态用于RViz
             self.publish_joint_state(joint_positions, joint_names)

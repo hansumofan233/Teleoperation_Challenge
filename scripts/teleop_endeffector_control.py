@@ -38,7 +38,7 @@ class TeleopEndEffectorControl(Node):
         self.declare_parameter('workspace_y_max', 0.4)
         self.declare_parameter('workspace_z', 0.9)  # 固定Z高度 (m)
         self.declare_parameter('rotation_sensitivity', 2.0)  # 旋转灵敏度
-        self.declare_parameter('position_smoothing', 0.3)  # 位置平滑系数
+        self.declare_parameter('position_smoothing', 0.15)  # 位置平滑系数（降低以减少抖动）
         self.declare_parameter('camera_id', 0)
         
         # 获取参数
@@ -136,7 +136,8 @@ class TeleopEndEffectorControl(Node):
             'left': [],   # 存储可见性状态
             'right': []
         }
-        self.visibility_buffer_size = 3  # 需要连续3帧不可见才停止
+        self.visibility_buffer_size = 5  # 需要连续5帧判断
+        self.visibility_threshold = 0.8  # 需要80%的帧可见才认为稳定可见
         
         # 创建定时器处理视频流
         self.timer = self.create_timer(0.033, self.process_frame)  # ~30Hz
@@ -455,9 +456,9 @@ class TeleopEndEffectorControl(Node):
             if len(self.visibility_buffer['right']) > self.visibility_buffer_size:
                 self.visibility_buffer['right'].pop(0)
             
-            # 判断是否稳定可见：缓冲区中至少有一半是可见的
-            left_is_visible = sum(self.visibility_buffer['left']) >= len(self.visibility_buffer['left']) * 0.5
-            right_is_visible = sum(self.visibility_buffer['right']) >= len(self.visibility_buffer['right']) * 0.5
+            # 判断是否稳定可见：需要达到阈值比例才认为可见
+            left_is_visible = sum(self.visibility_buffer['left']) >= len(self.visibility_buffer['left']) * self.visibility_threshold
+            right_is_visible = sum(self.visibility_buffer['right']) >= len(self.visibility_buffer['right']) * self.visibility_threshold
             
             # 更新左臂位置（只有当稳定可见且有有效位姿时才更新）
             if left_pose is not None and left_is_visible:
