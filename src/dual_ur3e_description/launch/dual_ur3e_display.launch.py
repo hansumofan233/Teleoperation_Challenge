@@ -32,8 +32,8 @@ def generate_launch_description():
         
         DeclareLaunchArgument(
             'use_gui',
-            default_value='true',
-            description='Start joint_state_publisher_gui'
+            default_value='false',
+            description='Start joint_state_publisher_gui (set to false for teleoperation)'
         ),
         
         # Robot State Publisher
