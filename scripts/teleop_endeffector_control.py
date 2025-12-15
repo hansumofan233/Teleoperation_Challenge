@@ -106,15 +106,19 @@ class TeleopEndEffectorControl(Node):
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         
+        # 定义初始位置（用于重置）
+        self.INITIAL_LEFT_POSITION = np.array([0.6, 0.3, 0.7])
+        self.INITIAL_RIGHT_POSITION = np.array([0.6, -0.3, 0.7])
+        
         # 状态变量 - 机械臂状态
         self.left_arm_state = {
-            'position': np.array([0.6, 0.3, 0.7]),  # 左臂初始位置
+            'position': self.INITIAL_LEFT_POSITION.copy(),  # 左臂初始位置
             'prev_position': None,
             'gripper_open': True,  # 夹爪状态
             'prev_gripper_open': True
         }
         self.right_arm_state = {
-            'position': np.array([0.6, -0.3, 0.7]),  # 右臂初始位置
+            'position': self.INITIAL_RIGHT_POSITION.copy(),  # 右臂初始位置
             'prev_position': None,
             'gripper_open': True,
             'prev_gripper_open': True
@@ -126,6 +130,13 @@ class TeleopEndEffectorControl(Node):
             'right': []
         }
         self.gesture_buffer_size = 5  # 缓冲区大小
+        
+        # 手臂可见性去抖动 - 必须连续N帧不可见才停止发送命令
+        self.visibility_buffer = {
+            'left': [],   # 存储可见性状态
+            'right': []
+        }
+        self.visibility_buffer_size = 3  # 需要连续3帧不可见才停止
         
         # 创建定时器处理视频流
         self.timer = self.create_timer(0.033, self.process_frame)  # ~30Hz
@@ -142,7 +153,31 @@ class TeleopEndEffectorControl(Node):
         self.get_logger().info('手势控制:')
         self.get_logger().info('  - 张开手掌 → 打开夹爪')
         self.get_logger().info('  - 握拳 → 关闭夹爪')
-        self.get_logger().info('按键: q-退出 | s-保存截图')
+        self.get_logger().info('按键: q-退出 | r-重置到初始位置 | s-保存截图')
+    
+    def reset_to_initial_position(self):
+        """重置机械臂到初始位置"""
+        self.get_logger().info('重置机械臂到初始位置...')
+        
+        # 重置左臂
+        self.left_arm_state['position'] = self.INITIAL_LEFT_POSITION.copy()
+        self.left_arm_state['prev_position'] = None
+        self.left_arm_state['gripper_open'] = True
+        self.publish_endeffector_command('left')
+        self.publish_gripper_command('left', True)
+        
+        # 重置右臂
+        self.right_arm_state['position'] = self.INITIAL_RIGHT_POSITION.copy()
+        self.right_arm_state['prev_position'] = None
+        self.right_arm_state['gripper_open'] = True
+        self.publish_endeffector_command('right')
+        self.publish_gripper_command('right', True)
+        
+        # 清空手势缓冲
+        self.gesture_buffer['left'].clear()
+        self.gesture_buffer['right'].clear()
+        
+        self.get_logger().info('✅ 已重置到初始位置: 左臂(0.6, 0.3, 0.7), 右臂(0.6, -0.3, 0.7)')
     
     def recognize_hand_gesture(self, hand_landmarks):
         """识别手势：返回'open'(张开)或'closed'(握拳)"""
@@ -223,13 +258,18 @@ class TeleopEndEffectorControl(Node):
             shoulder_idx = self.keypoints['RIGHT_SHOULDER']
             wrist_idx = self.keypoints['RIGHT_WRIST']
         
-        # 检查可见性
-        if landmarks[wrist_idx].visibility < 0.5 or landmarks[shoulder_idx].visibility < 0.5:
+        # 检查可见性（提高阈值，更严格）
+        if landmarks[wrist_idx].visibility < 0.7 or landmarks[shoulder_idx].visibility < 0.7:
             return None
         
         # 获取当前位置
         shoulder = np.array([landmarks[shoulder_idx].x, landmarks[shoulder_idx].y, landmarks[shoulder_idx].z])
         wrist = np.array([landmarks[wrist_idx].x, landmarks[wrist_idx].y, landmarks[wrist_idx].z])
+        
+        # 检查手腕是否在合理范围内（防止部分遮挡或边缘情况）
+        # MediaPipe坐标范围是[0, 1]，我们要求在[0.1, 0.9]范围内
+        if not (0.1 < wrist[0] < 0.9 and 0.1 < wrist[1] < 0.9):
+            return None  # 手腕太靠近画面边缘，可能即将离开
         
         # 使用相对于肩膀的位置进行映射
         relative = wrist - shoulder
@@ -376,7 +416,7 @@ class TeleopEndEffectorControl(Node):
         info_y += 25
         
         # 控制说明
-        cv2.putText(image, "q:Quit | s:Save | Open Palm=Open Gripper | Fist=Close Gripper", 
+        cv2.putText(image, "q:Quit | r:Reset to Initial | s:Save | Open Palm=Open | Fist=Close", 
                    (10, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
         return image
@@ -405,8 +445,22 @@ class TeleopEndEffectorControl(Node):
             left_pose = self.calculate_endeffector_pose(pose_results.pose_landmarks, 'left')
             right_pose = self.calculate_endeffector_pose(pose_results.pose_landmarks, 'right')
             
-            # 更新左臂位置
-            if left_pose is not None:
+            # 更新可见性缓冲区（去抖动）
+            self.visibility_buffer['left'].append(left_pose is not None)
+            self.visibility_buffer['right'].append(right_pose is not None)
+            
+            # 保持缓冲区大小
+            if len(self.visibility_buffer['left']) > self.visibility_buffer_size:
+                self.visibility_buffer['left'].pop(0)
+            if len(self.visibility_buffer['right']) > self.visibility_buffer_size:
+                self.visibility_buffer['right'].pop(0)
+            
+            # 判断是否稳定可见：缓冲区中至少有一半是可见的
+            left_is_visible = sum(self.visibility_buffer['left']) >= len(self.visibility_buffer['left']) * 0.5
+            right_is_visible = sum(self.visibility_buffer['right']) >= len(self.visibility_buffer['right']) * 0.5
+            
+            # 更新左臂位置（只有当稳定可见且有有效位姿时才更新）
+            if left_pose is not None and left_is_visible:
                 self.left_arm_state['position'] = self.smooth_motion(
                     left_pose['position'], 
                     self.left_arm_state['prev_position']
@@ -415,9 +469,19 @@ class TeleopEndEffectorControl(Node):
                 
                 # 发布控制命令
                 self.publish_endeffector_command('left')
+                
+                # 重置警告标志并通知恢复
+                if hasattr(self, '_left_invisible_warned'):
+                    del self._left_invisible_warned
+                    self.get_logger().info('✅ 左臂重新可见，继续跟随')
+            else:
+                # 手臂不可见时，保持当前位置，不更新也不发布命令
+                if not hasattr(self, '_left_invisible_warned'):
+                    self._left_invisible_warned = True
+                    self.get_logger().info('⚠️  左臂不可见，保持当前位置不动')
             
-            # 更新右臂位置
-            if right_pose is not None:
+            # 更新右臂位置（只有当稳定可见且有有效位姿时才更新）
+            if right_pose is not None and right_is_visible:
                 self.right_arm_state['position'] = self.smooth_motion(
                     right_pose['position'],
                     self.right_arm_state['prev_position']
@@ -426,6 +490,21 @@ class TeleopEndEffectorControl(Node):
                 
                 # 发布控制命令
                 self.publish_endeffector_command('right')
+                
+                # 重置警告标志并通知恢复
+                if hasattr(self, '_right_invisible_warned'):
+                    del self._right_invisible_warned
+                    self.get_logger().info('✅ 右臂重新可见，继续跟随')
+            else:
+                # 手臂不可见时，保持当前位置，不更新也不发布命令
+                if not hasattr(self, '_right_invisible_warned'):
+                    self._right_invisible_warned = True
+                    self.get_logger().info('⚠️  右臂不可见，保持当前位置不动')
+        else:
+            # 完全没有检测到人体姿态
+            if not hasattr(self, '_no_pose_warned'):
+                self._no_pose_warned = True
+                self.get_logger().debug('未检测到人体姿态，机械臂保持当前位置')
         
         # 处理手部手势识别
         if hands_results.multi_hand_landmarks and hands_results.multi_handedness:
@@ -433,11 +512,11 @@ class TeleopEndEffectorControl(Node):
                 # 确定是左手还是右手（注意镜像翻转）
                 hand_label = handedness.classification[0].label
                 
-                # MediaPipe返回的是相机视角，已经翻转过了
+                # MediaPipe的Left/Right是从摄像头视角镜像翻转
                 if hand_label == "Left":
-                    arm = "right"  # 左手在镜像后对应右臂
+                    arm = "left"   # MediaPipe的Left = 用户左手 = 左臂
                 else:
-                    arm = "left"   # 右手在镜像后对应左臂
+                    arm = "right"  # MediaPipe的Right = 用户右手 = 右臂
                 
                 # 识别手势
                 gesture = self.recognize_hand_gesture(hand_landmarks)
@@ -465,6 +544,9 @@ class TeleopEndEffectorControl(Node):
         if key == ord('q'):
             self.get_logger().info('退出程序')
             rclpy.shutdown()
+        elif key == ord('r'):
+            # 重置到初始位置
+            self.reset_to_initial_position()
         elif key == ord('s'):
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             filename = f"teleop_capture_{timestamp}.jpg"

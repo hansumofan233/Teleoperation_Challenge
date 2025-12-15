@@ -116,23 +116,59 @@ class EndEffectorCommander(Node):
         self.left_current_joints = np.array([0.0, -np.pi/4, np.pi/2, -np.pi/4, -np.pi/2, 0.0])
         self.right_current_joints = np.array([0.0, -np.pi/4, np.pi/2, -np.pi/4, -np.pi/2, 0.0])
         
+        # 基座位置和旋转（从URDF）
+        # 两个机械臂都旋转了-90度（-1.5708 rad），即逆时针旋转90度
+        self.left_base_pos = np.array([0.5, 0.5, 0.775])
+        self.right_base_pos = np.array([-0.5, 0.5, 0.775])
+        self.base_rotation = -np.pi/2  # -90度旋转
+        
         self.get_logger().info('末端执行器命令转换节点已启动')
+        self.get_logger().info('注意: 机械臂基座旋转-90度，已添加坐标转换')
     
-    def simple_ik_planar(self, target_x, target_y, target_z, target_rot_z, current_joints):
+    def world_to_base_frame(self, world_x, world_y, world_z, base_pos):
+        """
+        将世界坐标系的目标转换为机械臂基座坐标系
+        机械臂基座旋转了-90度（逆时针），需要进行坐标转换
+        
+        世界坐标系：X向前，Y向左
+        机械臂基座坐标系（旋转-90度后）：X向左，Y向后
+        """
+        # 相对于基座的位置
+        rel_x = world_x - base_pos[0]
+        rel_y = world_y - base_pos[1]
+        rel_z = world_z - base_pos[2]
+        
+        # 旋转变换：将世界坐标转到旋转-90度后的基座坐标
+        # 旋转矩阵 R(-90°):
+        # [cos(-90°)  -sin(-90°)]   [0   1]
+        # [sin(-90°)   cos(-90°)] = [-1  0]
+        # 
+        # 新坐标 = R * 旧坐标
+        base_x = rel_y   # 世界的Y → 基座的X（向左变成向前）
+        base_y = -rel_x  # 世界的X → 基座的-Y（向前变成向右，所以取负）
+        base_z = rel_z
+        
+        return base_x, base_y, base_z
+    
+    def simple_ik_planar(self, target_x, target_y, target_z, target_rot_z, current_joints, arm='left'):
         """
         简化的逆运动学求解(针对平面运动+旋转)
         
         策略:
         - 固定肩部和肘部关节实现平面XY位置
         - 使用腕部关节实现旋转
+        - 考虑基座旋转，进行坐标转换
         """
         
+        # 转换到机械臂基座坐标系
+        base_pos = self.left_base_pos if arm == 'left' else self.right_base_pos
+        local_x, local_y, local_z = self.world_to_base_frame(target_x, target_y, target_z, base_pos)
+        
         def forward_kinematics_simplified(joints):
-            """简化正运动学(只计算末端位置和方向)"""
+            """简化正运动学(只计算末端位置和方向) - 在机械臂局部坐标系"""
             q1, q2, q3, q4, q5, q6 = joints
             
-            # 简化计算: 只关注XY平面和Z轴旋转
-            # 基座旋转
+            # 在机械臂局部坐标系中计算
             x = (self.a2 * np.cos(q2) + self.a3 * np.cos(q2 + q3)) * np.cos(q1)
             y = (self.a2 * np.cos(q2) + self.a3 * np.cos(q2 + q3)) * np.sin(q1)
             z = self.d1 + self.a2 * np.sin(q2) + self.a3 * np.sin(q2 + q3)
@@ -143,11 +179,11 @@ class EndEffectorCommander(Node):
             return np.array([x, y, z, rot_z])
         
         def cost_function(joints):
-            """优化目标函数"""
+            """优化目标函数 - 使用局部坐标系的目标"""
             fk_result = forward_kinematics_simplified(joints)
             
-            # 位置误差
-            pos_error = np.sum((fk_result[:3] - np.array([target_x, target_y, target_z]))**2)
+            # 位置误差（使用转换后的局部坐标）
+            pos_error = np.sum((fk_result[:3] - np.array([local_x, local_y, local_z]))**2)
             
             # 旋转误差
             rot_error = (fk_result[3] - target_rot_z)**2
@@ -217,14 +253,18 @@ class EndEffectorCommander(Node):
             self._left_callback_count = 0
         self._left_callback_count += 1
         
+        # 计算转换后的局部坐标（用于调试）
+        local_x, local_y, local_z = self.world_to_base_frame(target_x, target_y, target_z, self.left_base_pos)
+        
         if self._left_callback_count % 30 == 1:
-            self.get_logger().info(f'左臂目标: X={target_x:.3f}, Y={target_y:.3f}, Z={target_z:.3f}, Rot={target_rot_z:.3f}')
+            self.get_logger().info(f'左臂目标 - 世界: X={target_x:.3f}, Y={target_y:.3f}, Z={target_z:.3f}')
+            self.get_logger().info(f'         - 局部: X={local_x:.3f}, Y={local_y:.3f}, Z={local_z:.3f}')
         
         # 求解逆运动学
         try:
             joint_positions = self.simple_ik_planar(
                 target_x, target_y, target_z, target_rot_z,
-                self.left_current_joints
+                self.left_current_joints, 'left'
             )
             
             # 更新当前状态
@@ -301,14 +341,18 @@ class EndEffectorCommander(Node):
             self._right_callback_count = 0
         self._right_callback_count += 1
         
+        # 计算转换后的局部坐标（用于调试）
+        local_x, local_y, local_z = self.world_to_base_frame(target_x, target_y, target_z, self.right_base_pos)
+        
         if self._right_callback_count % 30 == 1:
-            self.get_logger().info(f'右臂目标: X={target_x:.3f}, Y={target_y:.3f}, Z={target_z:.3f}, Rot={target_rot_z:.3f}')
+            self.get_logger().info(f'右臂目标 - 世界: X={target_x:.3f}, Y={target_y:.3f}, Z={target_z:.3f}')
+            self.get_logger().info(f'         - 局部: X={local_x:.3f}, Y={local_y:.3f}, Z={local_z:.3f}')
         
         # 求解逆运动学
         try:
             joint_positions = self.simple_ik_planar(
                 target_x, target_y, target_z, target_rot_z,
-                self.right_current_joints
+                self.right_current_joints, 'right'
             )
             
             # 更新当前状态
