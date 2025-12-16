@@ -17,6 +17,9 @@ from scipy.optimize import minimize
 class EndEffectorCommander(Node):
     def __init__(self):
         super().__init__('endeffector_commander')
+        # 调试：使用序号对齐日志
+        self.declare_parameter('debug_log_every_n', 30)
+        self.debug_log_every_n = int(self.get_parameter('debug_log_every_n').value)
         
         # 订阅末端执行器目标
         self.left_ee_sub = self.create_subscription(
@@ -68,17 +71,17 @@ class EndEffectorCommander(Node):
         # 跟踪所有关节的状态
         self.all_joint_positions = {
             'left_shoulder_pan_joint': 0.0,
-            'left_shoulder_lift_joint': -np.pi/4,
-            'left_elbow_joint': np.pi/2,
-            'left_wrist_1_joint': -np.pi/4,
-            'left_wrist_2_joint': -np.pi/2,
-            'left_wrist_3_joint': 0.0,
+            'left_shoulder_lift_joint': 0.0,
+            'left_elbow_joint': 0.0,
+            'left_wrist_1_joint': -1.5708,
+            'left_wrist_2_joint': 0.0,
+            'left_wrist_3_joint': -3.1416,
             'right_shoulder_pan_joint': 0.0,
-            'right_shoulder_lift_joint': -np.pi/4,
-            'right_elbow_joint': np.pi/2,
-            'right_wrist_1_joint': -np.pi/4,
-            'right_wrist_2_joint': -np.pi/2,
-            'right_wrist_3_joint': 0.0,
+            'right_shoulder_lift_joint': 0.0,
+            'right_elbow_joint': 0.0,
+            'right_wrist_1_joint': -1.5708,
+            'right_wrist_2_joint': 0.0,
+            'right_wrist_3_joint': 3.1416,
             # Gripper joints (保持固定)
             'left_robotiq_85_left_knuckle_joint': 0.0,
             'left_robotiq_85_right_knuckle_joint': 0.0,
@@ -103,6 +106,148 @@ class EndEffectorCommander(Node):
         self.d6 = 0.0921   # 手腕3到末端
         
         # 关节限制 (rad)
+        self.left_joint_limits = [
+            (-0.01, 0.01),      # shoulder_pan_joint (q1) - 固定
+            (-np.pi, 0),        # shoulder_lift_joint (q2)
+            (0, 2*np.pi/3),     # elbow_joint (q3)
+            (-2*np.pi, 2*np.pi),# wrist_1_joint (q4)
+            (-0.01, 0.01),      # wrist_2_joint (q5) - 固定
+            (-3.1417, -3.1415)  # wrist_3_joint (q6) - 固定
+        ]
+        self.right_joint_limits = [
+            (-0.01, 0.01),      # shoulder_pan_joint (q1) - 固定
+            (-np.pi, 0),        # shoulder_lift_joint (q2)
+            (0, 2*np.pi/3),     # elbow_joint (q3)
+            (-2*np.pi, 2*np.pi),# wrist_1_joint (q4)
+            (-0.01, 0.01),      # wrist_2_joint (q5) - 固定
+            (3.1415, 3.1417)    # wrist_3_joint (q6) - 固定
+        ]
+        
+        # 当前关节状态(用于连续性)
+        self.left_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, -3.1416])
+        self.right_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, 3.1416])
+        
+        # UR3e机械臂DH参数 (简化模型)
+        self.d1 = 0.15185  # 基座高度
+        self.a2 = 0.24355  # 大臂长度
+        self.a3 = 0.21325  # 小臂长度
+        self.d4 = 0.13105  # 手腕1到末端
+        self.d5 = 0.08535  # 手腕2到末端
+        self.d6 = 0.0921   # 手腕3到末端
+        
+        # 关节限制 (rad)
+        self.left_joint_limits = [
+            (-0.01, 0.01),      # shoulder_pan_joint (q1) - 固定
+            (-np.pi, 0),        # shoulder_lift_joint (q2)
+            (0, 2*np.pi/3),     # elbow_joint (q3)
+            (-2*np.pi, 2*np.pi),# wrist_1_joint (q4)
+            (-0.01, 0.01),      # wrist_2_joint (q5) - 固定
+            (-3.1417, -3.1415)  # wrist_3_joint (q6) - 固定
+        ]
+        self.right_joint_limits = [
+            (-0.01, 0.01),      # shoulder_pan_joint (q1) - 固定
+            (-np.pi, 0),        # shoulder_lift_joint (q2)
+            (0, 2*np.pi/3),     # elbow_joint (q3)
+            (-2*np.pi, 2*np.pi),# wrist_1_joint (q4)
+            (-0.01, 0.01),      # wrist_2_joint (q5) - 固定
+            (3.1415, 3.1417)    # wrist_3_joint (q6) - 固定
+        ]
+        
+        # 当前关节状态(用于连续性)
+        self.left_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, -3.1416])
+        self.right_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, 3.1416])
+        
+        # UR3e机械臂DH参数 (简化模型)
+        self.d1 = 0.15185  # 基座高度
+        self.a2 = 0.24355  # 大臂长度
+        self.a3 = 0.21325  # 小臂长度
+        self.d4 = 0.13105  # 手腕1到末端
+        self.d5 = 0.08535  # 手腕2到末端
+        self.d6 = 0.0921   # 手腕3到末端
+        
+        # 关节限制 (rad)
+        self.left_joint_limits = [
+            (-0.01, 0.01),      # shoulder_pan_joint (q1) - 固定
+            (-np.pi, 0),        # shoulder_lift_joint (q2)
+            (0, 2*np.pi/3),     # elbow_joint (q3)
+            (-2*np.pi, 2*np.pi),# wrist_1_joint (q4)
+            (-0.01, 0.01),      # wrist_2_joint (q5) - 固定
+            (-3.1417, -3.1415)  # wrist_3_joint (q6) - 固定
+        ]
+        self.right_joint_limits = [
+            (-0.01, 0.01),      # shoulder_pan_joint (q1) - 固定
+            (-np.pi, 0),        # shoulder_lift_joint (q2)
+            (0, 2*np.pi/3),     # elbow_joint (q3)
+            (-2*np.pi, 2*np.pi),# wrist_1_joint (q4)
+            (-0.01, 0.01),      # wrist_2_joint (q5) - 固定
+            (3.1415, 3.1417)    # wrist_3_joint (q6) - 固定
+        ]
+        
+        # 当前关节状态(用于连续性)
+        self.left_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, -3.1416])
+        self.right_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, 3.1416])
+        
+        # UR3e机械臂DH参数 (简化模型)
+        self.d1 = 0.15185  # 基座高度
+        self.a2 = 0.24355  # 大臂长度
+        self.a3 = 0.21325  # 小臂长度
+        self.d4 = 0.13105  # 手腕1到末端
+        self.d5 = 0.08535  # 手腕2到末端
+        self.d6 = 0.0921   # 手腕3到末端
+        
+        # 关节限制 (rad)
+        self.left_joint_limits = [
+            (-0.01, 0.01),      # shoulder_pan_joint (q1) - 固定
+            (-np.pi, 0),        # shoulder_lift_joint (q2)
+            (0, 2*np.pi/3),     # elbow_joint (q3)
+            (-2*np.pi, 2*np.pi),# wrist_1_joint (q4)
+            (-0.01, 0.01),      # wrist_2_joint (q5) - 固定
+            (-3.1417, -3.1415)  # wrist_3_joint (q6) - 固定
+        ]
+        self.right_joint_limits = [
+            (-0.01, 0.01),      # shoulder_pan_joint (q1) - 固定
+            (-np.pi, 0),        # shoulder_lift_joint (q2)
+            (0, 2*np.pi/3),     # elbow_joint (q3)
+            (-2*np.pi, 2*np.pi),# wrist_1_joint (q4)
+            (-0.01, 0.01),      # wrist_2_joint (q5) - 固定
+            (3.1415, 3.1417)    # wrist_3_joint (q6) - 固定
+        ]
+        
+        # 当前关节状态(用于连续性)
+        self.left_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, -3.1416])
+        self.right_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, 3.1416])
+        
+        # UR3e机械臂DH参数 (简化模型)
+        self.d1 = 0.15185  # 基座高度
+        self.a2 = 0.24355  # 大臂长度
+        self.a3 = 0.21325  # 小臂长度
+        self.d4 = 0.13105  # 手腕1到末端
+        self.d5 = 0.08535  # 手腕2到末端
+        self.d6 = 0.0921   # 手腕3到末端
+        
+        # 关节限制 (rad)
+        self.joint_limits = [
+            (-0.1, 0.1),              # shoulder_pan_joint (q1) - 固定
+            (-np.pi/2, np.pi/2),      # shoulder_lift_joint (q2)
+            (0, np.pi),               # elbow_joint (q3)
+            (-2*np.pi, 2*np.pi),      # wrist_1_joint (q4)
+            (-0.1, 0.1),              # wrist_2_joint (q5) - 固定
+            (-3.15, -3.13) if 'left' in self.get_name() else (3.13, 3.15) # wrist_3_joint (q6) - 固定
+        ]
+        
+        # 当前关节状态(用于连续性)
+        self.left_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, -3.1416])
+        self.right_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, 3.1416])
+        
+        # UR3e机械臂DH参数 (简化模型)
+        self.d1 = 0.15185  # 基座高度
+        self.a2 = 0.24355  # 大臂长度
+        self.a3 = 0.21325  # 小臂长度
+        self.d4 = 0.13105  # 手腕1到末端
+        self.d5 = 0.08535  # 手腕2到末端
+        self.d6 = 0.0921   # 手腕3到末端
+        
+        # 关节限制 (rad)
         self.joint_limits = [
             (-2*np.pi, 2*np.pi),  # 基座
             (-np.pi, np.pi),       # 肩部
@@ -113,8 +258,8 @@ class EndEffectorCommander(Node):
         ]
         
         # 当前关节状态(用于连续性)
-        self.left_current_joints = np.array([0.0, -np.pi/4, np.pi/2, -np.pi/4, -np.pi/2, 0.0])
-        self.right_current_joints = np.array([0.0, -np.pi/4, np.pi/2, -np.pi/4, -np.pi/2, 0.0])
+        self.left_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, -3.1416])
+        self.right_current_joints = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, 3.1416])
         
         # 实际关节状态（从/joint_states读取）
         self.left_actual_joints = None
@@ -145,7 +290,6 @@ class EndEffectorCommander(Node):
         self.base_rotation = -np.pi/2  # -90度旋转
         
         self.get_logger().info('末端执行器命令转换节点已启动')
-        self.get_logger().info('注意: 机械臂基座旋转-90度，已添加坐标转换')
     
     def world_to_base_frame(self, world_x, world_y, world_z, base_pos):
         """
@@ -172,65 +316,86 @@ class EndEffectorCommander(Node):
         
         return base_x, base_y, base_z
     
-    def simple_ik_planar(self, target_x, target_y, target_z, target_rot_z, current_joints, arm='left'):
+    def simple_ik_planar(self, target_x, target_y, target_z, target_rot_z, current_joints, arm='left', interpret_relative=True):
         """
-        简化的逆运动学求解(针对平面运动+旋转)
+        简化的逆运动学求解(针对XZ平面位置 + 偏航角)
         
-        策略:
-        - 固定肩部和肘部关节实现平面XY位置
-        - 使用腕部关节实现旋转
-        - 考虑基座旋转，进行坐标转换
+        输入映射(来自视觉/手势检测的3DOF)：
+        - 手腕X位置 → 机械臂末端X位置
+        - 手腕Y高度 → 机械臂末端Z高度
+        - 手腕转动角 → 机械臂末端偏航角(腕1控制)，带轻量噪声抑制
+        
+        关节使用策略：
+        - 肩pan(q1)固定为0(保持正对)
+        - 肩lift(q2)+肘(q3) → 控制XZ位置
+        - 腕1(q4) → 对应偏航角
+        - 腕2(q5)、腕3(q6) 固定(分别为0和±pi)，按左右臂设定
         """
-        
-        # 转换到机械臂基座坐标系
-        base_pos = self.left_base_pos if arm == 'left' else self.right_base_pos
-        local_x, local_y, local_z = self.world_to_base_frame(target_x, target_y, target_z, base_pos)
-        
+
+        # 目标解释：若为相对位移，则直接将 X→local_x，Y→local_z；否则做世界→基座变换
+        if interpret_relative:
+            local_x = target_x   # 手腕X → 末端X(局部)
+            local_z = target_y   # 手腕Y → 末端Z(局部高度)
+        else:
+            base_pos = self.left_base_pos if arm == 'left' else self.right_base_pos
+            local_x, _local_y, local_z = self.world_to_base_frame(target_x, target_y, target_z, base_pos)
+
+        # 对偏航角做简单的低通滤波，抑制抖动(上一帧存在则使用)
+        if not hasattr(self, 'last_yaw'):
+            self.last_yaw = { 'left': 0.0, 'right': 0.0 }
+        alpha = 0.3  # 新值权重(0.3)，旧值(0.7)
+        target_rot_z_filtered = alpha * target_rot_z + (1 - alpha) * self.last_yaw[arm]
+        self.last_yaw[arm] = target_rot_z_filtered
+
         def forward_kinematics_simplified(joints):
-            """简化正运动学(只计算末端位置和方向) - 在机械臂局部坐标系"""
+            """简化正运动学(计算局部XZ位置与偏航角)"""
             q1, q2, q3, q4, q5, q6 = joints
-            
-            # 在机械臂局部坐标系中计算
-            x = (self.a2 * np.cos(q2) + self.a3 * np.cos(q2 + q3)) * np.cos(q1)
-            y = (self.a2 * np.cos(q2) + self.a3 * np.cos(q2 + q3)) * np.sin(q1)
+
+            # q1≈0时，末端在局部y≈0，主要控制x-z平面
+            x = (self.a2 * np.cos(q2) + self.a3 * np.cos(q2 + q3))
             z = self.d1 + self.a2 * np.sin(q2) + self.a3 * np.sin(q2 + q3)
-            
-            # 末端方向(简化为绕Z轴)
-            rot_z = q1 + q4 + q5 + q6
-            
-            return np.array([x, y, z, rot_z])
-        
+
+            # 偏航仅由腕1提供，避免腕2/3引入旋转噪声
+            rot_z = q4
+            return np.array([x, z, rot_z])
+
         def cost_function(joints):
-            """优化目标函数 - 使用局部坐标系的目标"""
-            fk_result = forward_kinematics_simplified(joints)
-            
-            # 位置误差（使用转换后的局部坐标）
-            pos_error = np.sum((fk_result[:3] - np.array([local_x, local_y, local_z]))**2)
-            
-            # 旋转误差
-            rot_error = (fk_result[3] - target_rot_z)**2
-            
-            # 关节变化惩罚(增加权重保持平滑，减少抖动)
-            joint_change = np.sum((joints - current_joints)**2) * 0.5
-            
-            # 关节速度惩罚（相邻关节角度差异）
-            joint_velocity = np.sum(np.diff(joints)**2) * 0.1
-            
-            return pos_error + rot_error * 0.5 + joint_change + joint_velocity
-        
-        # 使用优化求解，增加容差减少过度优化
+            fk_x, fk_z, fk_yaw = forward_kinematics_simplified(joints)
+
+            # 位置误差：只考虑 x 与 z，y忽略以匹配输入定义
+            pos_error = (fk_x - local_x) ** 2 + (fk_z - local_z) ** 2
+
+            # 偏航误差(使用滤波后的目标角)
+            rot_error = (fk_yaw - target_rot_z_filtered) ** 2
+
+            # 平滑惩罚：限制相对上一状态的跳变
+            joint_change = np.sum((joints - current_joints) ** 2) * 0.3
+
+            # 固定关节保持惩罚：q1接近0，q5接近0，q6接近左右设定值
+            q1, _, _, q4, q5, q6 = joints
+            fixed_penalty = (q1 - 0.0) ** 2 * 5.0 + (q5 - 0.0) ** 2 * 5.0
+            target_q6 = -np.pi if arm == 'left' else np.pi
+            fixed_penalty += (q6 - target_q6) ** 2 * 5.0
+
+            return pos_error + rot_error * 0.8 + joint_change + fixed_penalty
+
+        # 使用优化求解，bounds沿用已定义的joint_limits
         result = minimize(
             cost_function,
             current_joints,
             method='SLSQP',
             bounds=self.joint_limits,
-            options={'maxiter': 50, 'ftol': 1e-3}  # 减少迭代次数，提高容差
+            options={'maxiter': 60, 'ftol': 2e-3}
         )
-        
+
         if result.success:
-            # 对结果进行平滑处理，减少抖动
-            smoothed_joints = self.joint_smoothing * result.x + (1 - self.joint_smoothing) * current_joints
-            return smoothed_joints
+            # 对结果进行整体平滑，进一步抑制噪声
+            smoothed = self.joint_smoothing * result.x + (1 - self.joint_smoothing) * current_joints
+            # 强制将固定关节钳制在目标附近，避免数值漂移
+            smoothed[0] = 0.0  # q1 固定
+            smoothed[4] = 0.0  # q5 固定
+            smoothed[5] = -np.pi if arm == 'left' else np.pi  # q6 固定
+            return smoothed
         else:
             self.get_logger().warn('逆运动学求解失败,保持当前位置')
             return current_joints
@@ -319,7 +484,7 @@ class EndEffectorCommander(Node):
                 max_change = np.max(change)
                 self.get_logger().info(f'  最大变化: {np.degrees(max_change):.2f}° (与上次比较)')
                 if max_change > 0.5:  # 大于0.5弧度（约28.6°）
-                    self.get_logger().warn(f'⚠️  左臂单帧变化过大: {np.degrees(max_change):.2f}° - 可能导致抖动')
+                    self.get_logger().warn(f'左臂单帧变化过大: {np.degrees(max_change):.2f}° - 可能导致抖动')
         
         # 右臂状态
         if self.right_target_joints is not None:
@@ -333,7 +498,7 @@ class EndEffectorCommander(Node):
                 max_change = np.max(change)
                 self.get_logger().info(f'  最大变化: {np.degrees(max_change):.2f}° (与上次比较)')
                 if max_change > 0.5:
-                    self.get_logger().warn(f'⚠️  右臂单帧变化过大: {np.degrees(max_change):.2f}° - 可能导致抖动')
+                    self.get_logger().warn(f'右臂单帧变化过大: {np.degrees(max_change):.2f}° - 可能导致抖动')
         
         self.get_logger().info('='*80 + '\n')
     
@@ -344,7 +509,7 @@ class EndEffectorCommander(Node):
             return
         
         target_x, target_y, target_z = msg.data[:3]
-        target_rot_z = 0.0  # 默认旋转角度
+        target_rot_z = target_z  # 将第三维解释为偏航角的相对量
         
         # 检查目标位置是否发生变化
         current_target = np.array([target_x, target_y, target_z])
@@ -362,18 +527,24 @@ class EndEffectorCommander(Node):
             self._left_callback_count = 0
         self._left_callback_count += 1
         
-        # 计算转换后的局部坐标（用于调试）
-        local_x, local_y, local_z = self.world_to_base_frame(target_x, target_y, target_z, self.left_base_pos)
-        
-        if self._left_callback_count % 30 == 1:
-            self.get_logger().info(f'📬 [左臂] 接收目标 - 世界: X={target_x:.3f}, Y={target_y:.3f}, Z={target_z:.3f}')
-            self.get_logger().info(f'         - 局部: X={local_x:.3f}, Y={local_y:.3f}, Z={local_z:.3f}')
+        # 可选解析seq（第4元素）
+        seq = None
+        if len(msg.data) >= 4:
+            try:
+                seq = int(msg.data[3])
+            except Exception:
+                seq = None
+        # 调试：按seq或内部计数显示相对位移与偏航
+        if (seq is not None and seq % self.debug_log_every_n == 0) or \
+           (seq is None and self._left_callback_count % self.debug_log_every_n == 1):
+            suffix = f" (seq={seq})" if seq is not None else ""
+            self.get_logger().info(f'[左臂] 接收相对目标: ΔX={target_x:.3f}m, ΔZ={target_y:.3f}m, ΔYaw={target_z:.3f}rad{suffix}')
         
         # 求解逆运动学
         try:
             joint_positions = self.simple_ik_planar(
                 target_x, target_y, target_z, target_rot_z,
-                self.left_current_joints, 'left'
+                self.left_current_joints, 'left', interpret_relative=True
             )
             
             # 保存上一帧的关节状态用于对比变化
@@ -402,8 +573,9 @@ class EndEffectorCommander(Node):
             self.left_joint_pub.publish(trajectory_msg)
             
             # 调试输出：发布的关节角度
-            if self._left_callback_count % 30 == 1:
-                self.get_logger().info(f'🤖 [左臂] 发布关节命令: [{", ".join([f"{j:.3f}" for j in joint_positions])}]')
+            if (seq is not None and seq % self.debug_log_every_n == 0) or \
+               (seq is None and self._left_callback_count % self.debug_log_every_n == 1):
+                self.get_logger().info(f'[左臂] 发布关节命令: [{", ".join([f"{j:.3f}" for j in joint_positions])}]')
                 joint_degrees = [f"{np.degrees(j):6.1f}°" for j in joint_positions]
                 self.get_logger().info(f'         角度: [{", ".join(joint_degrees)}]')
             
@@ -455,7 +627,7 @@ class EndEffectorCommander(Node):
             return
         
         target_x, target_y, target_z = msg.data[:3]
-        target_rot_z = 0.0
+        target_rot_z = target_z
         
         # 检查目标位置是否发生变化
         current_target = np.array([target_x, target_y, target_z])
@@ -473,18 +645,24 @@ class EndEffectorCommander(Node):
             self._right_callback_count = 0
         self._right_callback_count += 1
         
-        # 计算转换后的局部坐标（用于调试）
-        local_x, local_y, local_z = self.world_to_base_frame(target_x, target_y, target_z, self.right_base_pos)
-        
-        if self._right_callback_count % 30 == 1:
-            self.get_logger().info(f'📬 [右臂] 接收目标 - 世界: X={target_x:.3f}, Y={target_y:.3f}, Z={target_z:.3f}')
-            self.get_logger().info(f'         - 局部: X={local_x:.3f}, Y={local_y:.3f}, Z={local_z:.3f}')
+        # 可选解析seq（第4元素）
+        seq = None
+        if len(msg.data) >= 4:
+            try:
+                seq = int(msg.data[3])
+            except Exception:
+                seq = None
+        # 调试：按seq或内部计数显示相对位移与偏航
+        if (seq is not None and seq % self.debug_log_every_n == 0) or \
+           (seq is None and self._right_callback_count % self.debug_log_every_n == 1):
+            suffix = f" (seq={seq})" if seq is not None else ""
+            self.get_logger().info(f'📬 [右臂] 接收相对目标: ΔX={target_x:.3f}m, ΔZ={target_y:.3f}m, ΔYaw={target_z:.3f}rad{suffix}')
         
         # 求解逆运动学
         try:
             joint_positions = self.simple_ik_planar(
                 target_x, target_y, target_z, target_rot_z,
-                self.right_current_joints, 'right'
+                self.right_current_joints, 'right', interpret_relative=True
             )
             
             # 保存上一帧的关节状态用于对比变化
@@ -510,7 +688,8 @@ class EndEffectorCommander(Node):
             self.right_joint_pub.publish(trajectory_msg)
             
             # 调试输出：发布的关节角度
-            if self._right_callback_count % 30 == 1:
+            if (seq is not None and seq % self.debug_log_every_n == 0) or \
+               (seq is None and self._right_callback_count % self.debug_log_every_n == 1):
                 self.get_logger().info(f'🤖 [右臂] 发布关节命令: [{", ".join([f"{j:.3f}" for j in joint_positions])}]')
                 joint_degrees = [f"{np.degrees(j):6.1f}°" for j in joint_positions]
                 self.get_logger().info(f'         角度: [{", ".join(joint_degrees)}]')

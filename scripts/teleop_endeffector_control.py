@@ -45,8 +45,17 @@ class TeleopEndEffectorControl(Node):
         self.declare_parameter('fixed_y_right', 0.0)
         # 相对位移缩放（由图像归一化坐标映射到世界坐标范围）
         self.declare_parameter('relative_frames_for_anchor', 5)
+        # 像素→米缩放配置：两种模式
+        # - 'workspace': 使用工作空间范围缩放(归一化0-1乘以范围)
+        # - 'fixed': 使用固定系数(米/像素)进行缩放
+        self.declare_parameter('scale_mode', 'workspace')
+        self.declare_parameter('scale_x_m_per_px', 0.0015)  # X每像素对应米(当scale_mode=fixed时启用)
+        self.declare_parameter('scale_z_m_per_px', 0.0015)  # Z每像素对应米(当scale_mode=fixed时启用)
         self.declare_parameter('yaw_smoothing', 0.2)
         self.declare_parameter('yaw_deadband_deg', 2.0)
+        # 调试：序号与同步日志
+        self.declare_parameter('debug_seq_enable', True)
+        self.declare_parameter('debug_log_every_n', 30)
         # 去敏感化
         self.declare_parameter('min_cam_delta', 0.02)  # 相机归一化坐标最小位移阈值
         self.declare_parameter('dominant_ratio', 1.5)  # 主臂位移相对比阈值
@@ -65,12 +74,17 @@ class TeleopEndEffectorControl(Node):
         self.fixed_y_left = float(self.get_parameter('fixed_y_left').value)
         self.fixed_y_right = float(self.get_parameter('fixed_y_right').value)
         self.anchor_wait_frames = int(self.get_parameter('relative_frames_for_anchor').value)
+        self.scale_mode = str(self.get_parameter('scale_mode').value)
+        self.scale_x_m_per_px = float(self.get_parameter('scale_x_m_per_px').value)
+        self.scale_z_m_per_px = float(self.get_parameter('scale_z_m_per_px').value)
         self.yaw_alpha = float(self.get_parameter('yaw_smoothing').value)
         self.yaw_deadband = np.deg2rad(float(self.get_parameter('yaw_deadband_deg').value))
         self.min_cam_delta = float(self.get_parameter('min_cam_delta').value)
         self.dominant_ratio = float(self.get_parameter('dominant_ratio').value)
         self.min_world_delta_x = float(self.get_parameter('min_world_delta_x').value)
         self.min_world_delta_z = float(self.get_parameter('min_world_delta_z').value)
+        self.debug_seq_enable = bool(self.get_parameter('debug_seq_enable').value)
+        self.debug_log_every_n = int(self.get_parameter('debug_log_every_n').value)
         
         # 添加夹爪控制发布器
         self.left_gripper_pub = self.create_publisher(
@@ -193,6 +207,10 @@ class TeleopEndEffectorControl(Node):
         self.get_logger().info('  - 张开手掌 → 打开夹爪')
         self.get_logger().info('  - 握拳 → 关闭夹爪')
         self.get_logger().info('按键: q-退出 | r-重置到初始位置 | s-保存截图')
+        if self.debug_seq_enable:
+            self.get_logger().info(f'调试序号开启：每 {self.debug_log_every_n} 帧打印一次（基于 seq）')
+        else:
+            self.get_logger().info('调试序号关闭：按内部计数打印日志')
     
     def _get_pose_wrist_pixels(self, pose_landmarks, image_shape):
         """返回可见的左右手腕像素坐标: {'left': (x,y) or None, 'right': (x,y) or None}"""
@@ -312,7 +330,17 @@ class TeleopEndEffectorControl(Node):
         return self.yaw_alpha * new_yaw + (1.0 - self.yaw_alpha) * prev_yaw
 
     def update_relative_from_cam(self, arm_state, cam_xy):
-        """基于图像手腕点(归一化xy)计算相对位移(世界坐标dx,dz)，并记录last_relative"""
+        """
+        基于图像手腕点计算相对位移：
+        - 初始化点 a：首次检测到该臂手腕点，记录为 anchor，并开始计数；达到 anchor_wait_frames 认为稳定
+        - 位置 b-a：当前手腕点与 anchor 之差，映射到世界相对位移(dx,dz)
+        - 缩放策略：
+          * scale_mode='workspace'：使用归一化差值×(X/Z工作空间范围)
+          * scale_mode='fixed'：将像素差值×(scale_x_m_per_px / scale_z_m_per_px)
+        - Z方向：图像y越小越高，因此 dz 为 -(cy - ay) × 缩放
+        - 去敏感化：相机最小位移阈值(min_cam_delta)、世界最小变化阈值(min_world_delta_x/z)
+        - 记录 last_relative=(dx,dz,yaw) 供日志打印
+        """
         if cam_xy is None:
             return
         if arm_state['anchor_cam_xy'] is None:
@@ -328,7 +356,7 @@ class TeleopEndEffectorControl(Node):
         # 计算相对(相对于首次可见锚点a)，图像坐标差->世界坐标差
         ax, ay = arm_state['anchor_cam_xy']
         cx, cy = cam_xy
-        # 去敏感化：若相机归一化位移过小，保持相对位移不变
+        # 去敏感化：若相机位移过小，保持相对位移不变
         cam_dx = cx - ax
         cam_dy = cy - ay
         cam_dist = np.hypot(cam_dx, cam_dy)
@@ -336,10 +364,14 @@ class TeleopEndEffectorControl(Node):
             dx_world = arm_state['relative_world_dx']
             dz_world = arm_state['relative_world_dz']
         else:
-            # x: [0,1]映射到workspace_x范围
-            dx_world = cam_dx * (self.workspace_x_max - self.workspace_x_min)
-            # z: 图像y越小越高 -> 世界z增大，因此dz为-(cy-ay)乘以高度范围
-            dz_world = -cam_dy * (self.workspace_z_max - self.workspace_z_min)
+            if self.scale_mode == 'fixed':
+                # 使用像素差值与固定缩放系数
+                dx_world = cam_dx * self.cap.get(cv2.CAP_PROP_FRAME_WIDTH) * self.scale_x_m_per_px
+                dz_world = -cam_dy * self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT) * self.scale_z_m_per_px
+            else:
+                # 使用归一化差值与工作空间范围
+                dx_world = cam_dx * (self.workspace_x_max - self.workspace_x_min)
+                dz_world = -cam_dy * (self.workspace_z_max - self.workspace_z_min)
             # 世界层面的死区
             if abs(dx_world - arm_state['relative_world_dx']) < self.min_world_delta_x:
                 dx_world = arm_state['relative_world_dx']
@@ -467,7 +499,7 @@ class TeleopEndEffectorControl(Node):
         return alpha * current + (1 - alpha) * previous
     
     def publish_endeffector_command(self, arm='left'):
-        """发布末端执行器目标位置，附带偏航(第4位)并输出相对位移日志"""
+        """发布相对末端执行器目标: [ΔX, ΔZ, ΔYaw, (可选)seq] 并输出日志"""
         # 常规发布：left臂→left话题，right臂→right话题
         if arm == 'left':
             state = self.left_arm_state
@@ -476,27 +508,32 @@ class TeleopEndEffectorControl(Node):
             state = self.right_arm_state
             publisher = self.right_ee_pub
         
-        # 构建消息: [x, y, z, yaw]
+        # 构建消息: [ΔX, ΔZ, ΔYaw, (可选)seq]
+        rel_dx, rel_dz, rel_yaw = state.get('last_relative', (0.0, 0.0, 0.0))
         msg = Float64MultiArray()
-        msg.data = [
-            float(state['position'][0]),
-            float(state['position'][1]),
-            float(state['position'][2]),
-            float(state['yaw'] if state['yaw'] is not None else 0.0)
-        ]
+        payload = [float(rel_dx), float(rel_dz), float(rel_yaw)]
+        if self.debug_seq_enable:
+            if not hasattr(self, f'_{arm}_seq'):
+                setattr(self, f'_{arm}_seq', 0)
+            seq = getattr(self, f'_{arm}_seq') + 1
+            setattr(self, f'_{arm}_seq', seq)
+            payload.append(float(seq))
+        msg.data = payload
         
         publisher.publish(msg)
         
         # 调试信息：定期输出发布的目标位置
-        if not hasattr(self, f'_{arm}_pub_count'):
-            setattr(self, f'_{arm}_pub_count', 0)
-        
-        count = getattr(self, f'_{arm}_pub_count')
-        setattr(self, f'_{arm}_pub_count', count + 1)
-        
-        if count % 30 == 0:  # 每30帧输出一次
-            rel_dx, rel_dz, rel_yaw = state.get('last_relative', (0.0, 0.0, 0.0))
-            self.get_logger().info(f'[{arm}臂] 发送相对位置目标xyz: x={rel_dx:.3f}m, y={rel_dz:.3f}m, z={rel_yaw:.2f}rad')
+        if self.debug_seq_enable:
+            seq = int(payload[3]) if len(payload) > 3 else -1
+            if seq > 0 and seq % self.debug_log_every_n == 0:
+                self.get_logger().info(f'[{arm}臂] 发送相对位置目标xyz: x={rel_dx:.3f}m, y={rel_dz:.3f}m, z={rel_yaw:.2f}rad (seq={seq})')
+        else:
+            if not hasattr(self, f'_{arm}_pub_count'):
+                setattr(self, f'_{arm}_pub_count', 0)
+            count = getattr(self, f'_{arm}_pub_count') + 1
+            setattr(self, f'_{arm}_pub_count', count)
+            if count % self.debug_log_every_n == 0:
+                self.get_logger().info(f'[{arm}臂] 发送相对位置目标xyz: x={rel_dx:.3f}m, y={rel_dz:.3f}m, z={rel_yaw:.2f}rad')
     
     def publish_gripper_command(self, arm='left', open_gripper=True):
         """发布夹爪命令"""
