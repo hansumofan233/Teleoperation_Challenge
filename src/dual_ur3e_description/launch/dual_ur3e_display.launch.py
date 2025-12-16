@@ -48,12 +48,22 @@ def generate_launch_description():
             }]
         ),
         
-        # Joint State Publisher (默认发布零位关节状态)
+        # Joint State Publisher (设置初始腕关节位置)
         Node(
             package='joint_state_publisher',
             executable='joint_state_publisher',
             name='joint_state_publisher',
-            parameters=[{'use_sim_time': use_sim_time}],
+            parameters=[{
+                'use_sim_time': use_sim_time,
+                # 左臂腕关节初始位置 (弧度)
+                'left_wrist_1_joint': -1.5708,      # -90°
+                'left_wrist_2_joint': 0.0,          # 0°
+                'left_wrist_3_joint': -3.1416,      # -180°
+                # 右臂腕关节初始位置 (弧度)
+                'right_wrist_1_joint': -1.5708,     # -90°
+                'right_wrist_2_joint': 0.0,         # 0°
+                'right_wrist_3_joint': 3.1416,      # 180°
+            }],
             condition=IfCondition(LaunchConfiguration('use_jsp', default='true'))
         ),
         
