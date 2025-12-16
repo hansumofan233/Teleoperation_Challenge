@@ -1,6 +1,6 @@
 Panels:
   - Class: rviz_common/Displays
-    Help Height: 78
+    Help Height: 0
     Name: Displays
     Property Tree Widget:
       Expanded:
@@ -9,24 +9,20 @@ Panels:
         - /RobotModel1
         - /TF1
       Splitter Ratio: 0.5
-    Tree Height: 718
+    Tree Height: 673
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
-    Expanded:
-      - /2D Goal Pose1
-      - /Publish Point1
+    Expanded: ~
     Name: Tool Properties
-    Splitter Ratio: 0.588679
+    Splitter Ratio: 0.5886790156364441
   - Class: rviz_common/Views
     Expanded:
       - /Current View1
     Name: Views
     Splitter Ratio: 0.5
-Toolbars:
-  toolButtonStyle: 2
 Visualization Manager:
-  Class: ''
+  Class: ""
   Displays:
     - Alpha: 0.5
       Cell Size: 1
@@ -34,7 +30,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Line Style:
-        Line Width: 0.03
+        Line Width: 0.029999999329447746
         Value: Line
       Name: Grid
       Normal Cell Count: 0
@@ -48,23 +44,251 @@ Visualization Manager:
       Value: true
     - Alpha: 1
       Class: rviz_default_plugins/RobotModel
-      Collision Margin: 0.01
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description
       Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
-        Link Tree Style: ''
+        Link Tree Style: Links in Alphabetic Order
+        left_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left_base_link_inertia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_base_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_flange:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left_forearm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_ft_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left_robotiq_85_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_robotiq_85_left_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_robotiq_85_left_finger_tip_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_robotiq_85_left_inner_knuckle_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_robotiq_85_left_knuckle_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_robotiq_85_right_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_robotiq_85_right_finger_tip_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_robotiq_85_right_inner_knuckle_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_robotiq_85_right_knuckle_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_shoulder_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_tool0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left_upper_arm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_wrist_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_wrist_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_wrist_3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_base_link_inertia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_base_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_flange:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_forearm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_ft_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_robotiq_85_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_robotiq_85_left_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_robotiq_85_left_finger_tip_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_robotiq_85_left_inner_knuckle_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_robotiq_85_left_knuckle_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_robotiq_85_right_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_robotiq_85_right_finger_tip_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_robotiq_85_right_inner_knuckle_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_robotiq_85_right_knuckle_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_shoulder_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_tool0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_upper_arm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_wrist_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_wrist_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_wrist_3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        table_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
       Name: RobotModel
-      Robot Description: robot_description
-      TF Prefix: ''
+      TF Prefix: ""
       Update Interval: 0
       Value: true
       Visual Enabled: true
-      Tf Update Rate: 10
     - Class: rviz_default_plugins/TF
-      Enabled: true
+      Enabled: false
       Frame Timeout: 15
       Frames:
         All Enabled: true
@@ -74,9 +298,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        world: {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -85,52 +309,52 @@ Visualization Manager:
   Name: root
   Tools:
     - Class: rviz_default_plugins/Interact
-      Hide Inactive: true
+      Hide Inactive Objects: true
     - Class: rviz_default_plugins/MoveCamera
-      Hide Inactive: true
     - Class: rviz_default_plugins/Select
-      Hide Inactive: true
     - Class: rviz_default_plugins/FocusCamera
-      Hide Inactive: true
     - Class: rviz_default_plugins/Measure
-      Hide Inactive: true
+      Line color: 128; 128; 0
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.5
+      Distance: 3.7223658561706543
       Enable Stereo Rendering:
-        Stereo Eye Separation: 0.06
+        Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 0.4962128698825836
+        Y: -0.11840841919183731
+        Z: -0.039023254066705704
       Focal Shape Fixed Size: true
-      Focal Shape Size: 0.05
+      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.01
-      Pitch: 1.0
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 1.0699999332427979
       Target Frame: world
       Value: Orbit (rviz_default_plugins)
-      Yaw: 1.0
-    Saved Views: {}
-  Window Geometry:
-    Displays:
-      collapsed: false
-      height: 1716
-      width: 1200
-    Selection:
-      collapsed: false
-      height: 246
-      width: 1920
-    Tool Properties:
-      collapsed: false
-      height: 0
-      width: 400
-    Views:
-      collapsed: false
-      height: 1716
-      width: 720
+      Yaw: 1.090000033378601
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 1333
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd00000001000000000000022b000004cdfc0200000004fb000000100044006900730070006c0061007900730100000047000002e8000000f100fffffffb0000001200530065006c0065006300740069006f006e000000020b000000ca0000006e00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007301000003360000006e0000006e00fffffffb0000000a0056006900650077007301000003ab00000169000000c200ffffff000005f5000004cd00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 2087
+  X: 178
+  Y: 134
