@@ -194,6 +194,46 @@ class TeleopEndEffectorControl(Node):
         self.get_logger().info('  - 握拳 → 关闭夹爪')
         self.get_logger().info('按键: q-退出 | r-重置到初始位置 | s-保存截图')
     
+    def _get_pose_wrist_pixels(self, pose_landmarks, image_shape):
+        """返回可见的左右手腕像素坐标: {'left': (x,y) or None, 'right': (x,y) or None}"""
+        if pose_landmarks is None:
+            return {'left': None, 'right': None}
+        h, w, _ = image_shape
+        # 注意：为与calculate_endeffector_pose中的镜像策略保持一致，
+        # 这里将“left臂”的参考腕像素取自RIGHT_WRIST，“right臂”的参考腕像素取自LEFT_WRIST。
+        l_idx = self.keypoints['RIGHT_WRIST']  # 对应left臂
+        r_idx = self.keypoints['LEFT_WRIST']   # 对应right臂
+        lm = pose_landmarks.landmark
+        left = None
+        right = None
+        if lm[l_idx].visibility > 0.5:
+            left = (float(lm[l_idx].x * w), float(lm[l_idx].y * h))
+        if lm[r_idx].visibility > 0.5:
+            right = (float(lm[r_idx].x * w), float(lm[r_idx].y * h))
+        return {'left': left, 'right': right}
+
+    def _assign_arm_for_hand(self, hand_landmarks, wrists_px, image_shape, fallback_label):
+        """基于最近手腕分配左右臂；若两腕都不可用则回退到handedness标签。"""
+        if hand_landmarks is None:
+            return 'left' if fallback_label == 'Left' else 'right'
+        h, w, _ = image_shape
+        hx = float(hand_landmarks.landmark[0].x * w)
+        hy = float(hand_landmarks.landmark[0].y * h)
+        left_px = wrists_px.get('left')
+        right_px = wrists_px.get('right')
+        # 两腕都不可见，回退到handedness
+        if left_px is None and right_px is None:
+            return 'left' if fallback_label == 'Left' else 'right'
+        # 仅一侧可见
+        if right_px is None:
+            return 'left'
+        if left_px is None:
+            return 'right'
+        # 比较距离，选最近腕
+        dl = (hx - left_px[0])**2 + (hy - left_px[1])**2
+        dr = (hx - right_px[0])**2 + (hy - right_px[1])**2
+        return 'left' if dl <= dr else 'right'
+
     def reset_to_initial_position(self):
         """重置机械臂到初始位置"""
         self.get_logger().info('重置机械臂到初始位置...')
@@ -384,7 +424,7 @@ class TeleopEndEffectorControl(Node):
         """
         landmarks = pose_landmarks.landmark
         
-        # 选择对应手臂的关键点（镜像修正：脚本中的left臂使用右侧关键点，right臂使用左侧关键点）
+        # 选择对应手臂的关键点（镜像：left臂使用右侧关键点，right臂使用左侧关键点）
         if arm == 'left':
             shoulder_idx = self.keypoints['RIGHT_SHOULDER']
             wrist_idx = self.keypoints['RIGHT_WRIST']
@@ -428,6 +468,7 @@ class TeleopEndEffectorControl(Node):
     
     def publish_endeffector_command(self, arm='left'):
         """发布末端执行器目标位置，附带偏航(第4位)并输出相对位移日志"""
+        # 常规发布：left臂→left话题，right臂→right话题
         if arm == 'left':
             state = self.left_arm_state
             publisher = self.left_ee_pub
@@ -459,6 +500,7 @@ class TeleopEndEffectorControl(Node):
     
     def publish_gripper_command(self, arm='left', open_gripper=True):
         """发布夹爪命令"""
+        # 常规发布：left臂→left夹爪话题，right臂→right夹爪话题
         if arm == 'left':
             publisher = self.left_gripper_pub
             state = self.left_arm_state
@@ -641,15 +683,12 @@ class TeleopEndEffectorControl(Node):
         
         # 处理手部手势识别 + 偏航估计
         if hands_results.multi_hand_landmarks and hands_results.multi_handedness:
+            wrists_px = self._get_pose_wrist_pixels(pose_results.pose_landmarks if pose_results else None, image.shape)
             for hand_landmarks, handedness in zip(hands_results.multi_hand_landmarks, hands_results.multi_handedness):
                 # 确定是左手还是右手（注意镜像翻转）
                 hand_label = handedness.classification[0].label
-                
-                # MediaPipe的Left/Right是从摄像头视角镜像翻转
-                if hand_label == "Left":
-                    arm = "left"   # MediaPipe的Left = 用户左手 = 左臂
-                else:
-                    arm = "right"  # MediaPipe的Right = 用户右手 = 右臂
+                # 绑定规则：优先使用最近手腕分配；若不可判定则回退到MediaPipe标签
+                arm = self._assign_arm_for_hand(hand_landmarks, wrists_px, image.shape, hand_label)
                 
                 # 识别手势
                 gesture = self.recognize_hand_gesture(hand_landmarks)
