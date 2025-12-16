@@ -48,7 +48,16 @@ def generate_launch_description():
             }]
         ),
         
-        # Joint State Publisher GUI
+        # Joint State Publisher (默认发布零位关节状态)
+        Node(
+            package='joint_state_publisher',
+            executable='joint_state_publisher',
+            name='joint_state_publisher',
+            parameters=[{'use_sim_time': use_sim_time}],
+            condition=IfCondition(LaunchConfiguration('use_jsp', default='true'))
+        ),
+        
+        # Joint State Publisher GUI (可选，用于手动调试)
         Node(
             package='joint_state_publisher_gui',
             executable='joint_state_publisher_gui',

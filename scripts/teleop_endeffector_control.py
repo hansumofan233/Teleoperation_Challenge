@@ -327,6 +327,16 @@ class TeleopEndEffectorControl(Node):
         ]
         
         publisher.publish(msg)
+        
+        # 调试信息：定期输出发布的目标位置
+        if not hasattr(self, f'_{arm}_pub_count'):
+            setattr(self, f'_{arm}_pub_count', 0)
+        
+        count = getattr(self, f'_{arm}_pub_count')
+        setattr(self, f'_{arm}_pub_count', count + 1)
+        
+        if count % 30 == 0:  # 每30帧输出一次
+            self.get_logger().info(f'📤 [{arm}臂] 发送目标: X={msg.data[0]:.3f}, Y={msg.data[1]:.3f}, Z={msg.data[2]:.3f}')
     
     def publish_gripper_command(self, arm='left', open_gripper=True):
         """发布夹爪命令"""

@@ -366,7 +366,7 @@ class EndEffectorCommander(Node):
         local_x, local_y, local_z = self.world_to_base_frame(target_x, target_y, target_z, self.left_base_pos)
         
         if self._left_callback_count % 30 == 1:
-            self.get_logger().info(f'左臂目标 - 世界: X={target_x:.3f}, Y={target_y:.3f}, Z={target_z:.3f}')
+            self.get_logger().info(f'📬 [左臂] 接收目标 - 世界: X={target_x:.3f}, Y={target_y:.3f}, Z={target_z:.3f}')
             self.get_logger().info(f'         - 局部: X={local_x:.3f}, Y={local_y:.3f}, Z={local_z:.3f}')
         
         # 求解逆运动学
@@ -403,13 +403,12 @@ class EndEffectorCommander(Node):
             
             # 调试输出：发布的关节角度
             if self._left_callback_count % 30 == 1:
-                self.get_logger().info(f'发布左臂关节命令: [{" ".join([f"{j:.3f}" for j in joint_positions])}]')
+                self.get_logger().info(f'🤖 [左臂] 发布关节命令: [{", ".join([f"{j:.3f}" for j in joint_positions])}]')
+                joint_degrees = [f"{np.degrees(j):6.1f}°" for j in joint_positions]
+                self.get_logger().info(f'         角度: [{", ".join(joint_degrees)}]')
             
             # 发布关节状态用于RViz
             self.publish_joint_state(joint_positions, joint_names)
-            
-            if self._left_callback_count % 30 == 1:
-                self.get_logger().info(f'已发布左臂关节命令')
         except Exception as e:
             self.get_logger().error(f'左臂IK求解失败: {e}')
     
@@ -478,7 +477,7 @@ class EndEffectorCommander(Node):
         local_x, local_y, local_z = self.world_to_base_frame(target_x, target_y, target_z, self.right_base_pos)
         
         if self._right_callback_count % 30 == 1:
-            self.get_logger().info(f'右臂目标 - 世界: X={target_x:.3f}, Y={target_y:.3f}, Z={target_z:.3f}')
+            self.get_logger().info(f'📬 [右臂] 接收目标 - 世界: X={target_x:.3f}, Y={target_y:.3f}, Z={target_z:.3f}')
             self.get_logger().info(f'         - 局部: X={local_x:.3f}, Y={local_y:.3f}, Z={local_z:.3f}')
         
         # 求解逆运动学
@@ -512,13 +511,12 @@ class EndEffectorCommander(Node):
             
             # 调试输出：发布的关节角度
             if self._right_callback_count % 30 == 1:
-                self.get_logger().info(f'发布右臂关节命令: [{" ".join([f"{j:.3f}" for j in joint_positions])}]')
+                self.get_logger().info(f'🤖 [右臂] 发布关节命令: [{", ".join([f"{j:.3f}" for j in joint_positions])}]')
+                joint_degrees = [f"{np.degrees(j):6.1f}°" for j in joint_positions]
+                self.get_logger().info(f'         角度: [{", ".join(joint_degrees)}]')
             
             # 发布关节状态用于RViz
             self.publish_joint_state(joint_positions, joint_names)
-            
-            if self._right_callback_count % 30 == 1:
-                self.get_logger().info(f'已发布右臂关节命令')
         except Exception as e:
             self.get_logger().error(f'右臂IK求解失败: {e}')
 

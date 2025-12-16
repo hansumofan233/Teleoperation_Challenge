@@ -5,17 +5,17 @@
   <xacro:include filename="$(find robotiq_85_description)/urdf/robotiq_85_gripper_macro.urdf.xacro"/>
   <!-- World frame -->
   <link name="world"/>
-  <!-- Base table - 2m x 2m  -->
+  <!-- Base table - 4m x 2m  -->
   <joint name="world_to_table" type="fixed">
     <parent link="world"/>
     <child link="table_link"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="2.0 1.0 0" rpy="0 0 0"/>
   </joint>
   <link name="table_link">
     <visual>
       <origin xyz="0 0 0.75" rpy="0 0 0"/>
       <geometry>
-        <box size="2.0 2.0 0.05"/>
+        <box size="4.0 2.0 0.05"/>
       </geometry>
       <material name="table_material">
         <color rgba="0.9 0.8 0.6 1.0"/>
@@ -24,20 +24,20 @@
     <collision>
       <origin xyz="0 0 0.75" rpy="0 0 0"/>
       <geometry>
-        <box size="2.0 2.0 0.05"/>
+        <box size="4.0 2.0 0.05"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="30"/>
+      <mass value="60"/>
       <origin xyz="0 0 0.75" rpy="0 0 0"/>
-      <inertia ixx="10" ixy="0" ixz="0" iyy="10" iyz="0" izz="20"/>
+      <inertia ixx="20" ixy="0" ixz="0" iyy="40" iyz="0" izz="60"/>
     </inertial>
   </link>
-  <!-- Left arm base mount - 位于 (0.5, 0.5) -->
+  <!-- Left arm base mount - 位于 (-0.5, 0)，保持末端朝向 -X -->
   <joint name="table_to_left_base" type="fixed">
     <parent link="table_link"/>
     <child link="left_base_mount"/>
-    <origin xyz="0.5 0.5 0.775" rpy="0 0 0"/>
+    <origin xyz="-0.5 0 0.775" rpy="0 0 -1.5708"/>
   </joint>
   <link name="left_base_mount">
     <visual>
@@ -61,11 +61,11 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <!-- Right arm base mount - 位于 (-0.5, 0.5) -->
+  <!-- Right arm base mount - 位于 (0.5, 0)，保持末端朝向 +X -->
   <joint name="table_to_right_base" type="fixed">
     <parent link="table_link"/>
     <child link="right_base_mount"/>
-    <origin xyz="-0.5 0.5 0.775" rpy="0 0 0"/>
+    <origin xyz="0.5 0 0.775" rpy="0 0 1.5708"/>
   </joint>
   <link name="right_base_mount">
     <visual>
@@ -93,7 +93,7 @@
   <xacro:ur_robot
     name="left_ur5"
     tf_prefix="left_"
-    parent="left_base_mount"
+    parent="right_base_mount"
     joint_limits_parameters_file="$(find ur_description)/config/ur5/joint_limits.yaml"
     kinematics_parameters_file="$(find ur_description)/config/ur5/default_kinematics.yaml"
     physical_parameters_file="$(find ur_description)/config/ur5/physical_parameters.yaml"
@@ -107,7 +107,7 @@
   <xacro:ur_robot
     name="right_ur5"
     tf_prefix="right_"
-    parent="right_base_mount"
+    parent="left_base_mount"
     joint_limits_parameters_file="$(find ur_description)/config/ur5/joint_limits.yaml"
     kinematics_parameters_file="$(find ur_description)/config/ur5/default_kinematics.yaml"
     physical_parameters_file="$(find ur_description)/config/ur5/physical_parameters.yaml"
