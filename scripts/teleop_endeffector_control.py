@@ -40,6 +40,18 @@ class TeleopEndEffectorControl(Node):
         self.declare_parameter('rotation_sensitivity', 2.0)  # 旋转灵敏度
         self.declare_parameter('position_smoothing', 0.15)  # 位置平滑系数（降低以减少抖动）
         self.declare_parameter('camera_id', 0)
+        # 仅X/Z控制下，侧向Y固定为0（不侧偏）
+        self.declare_parameter('fixed_y_left', 0.0)
+        self.declare_parameter('fixed_y_right', 0.0)
+        # 相对位移缩放（由图像归一化坐标映射到世界坐标范围）
+        self.declare_parameter('relative_frames_for_anchor', 5)
+        self.declare_parameter('yaw_smoothing', 0.2)
+        self.declare_parameter('yaw_deadband_deg', 2.0)
+        # 去敏感化
+        self.declare_parameter('min_cam_delta', 0.02)  # 相机归一化坐标最小位移阈值
+        self.declare_parameter('dominant_ratio', 1.5)  # 主臂位移相对比阈值
+        self.declare_parameter('min_world_delta_x', 0.01)  # 世界坐标最小X变化(m)
+        self.declare_parameter('min_world_delta_z', 0.01)  # 世界坐标最小Z变化(m)
         
         # 获取参数
         self.workspace_x_min = self.get_parameter('workspace_x_min').value
@@ -50,6 +62,15 @@ class TeleopEndEffectorControl(Node):
         self.rotation_sensitivity = self.get_parameter('rotation_sensitivity').value
         self.smoothing = self.get_parameter('position_smoothing').value
         camera_id = self.get_parameter('camera_id').value
+        self.fixed_y_left = float(self.get_parameter('fixed_y_left').value)
+        self.fixed_y_right = float(self.get_parameter('fixed_y_right').value)
+        self.anchor_wait_frames = int(self.get_parameter('relative_frames_for_anchor').value)
+        self.yaw_alpha = float(self.get_parameter('yaw_smoothing').value)
+        self.yaw_deadband = np.deg2rad(float(self.get_parameter('yaw_deadband_deg').value))
+        self.min_cam_delta = float(self.get_parameter('min_cam_delta').value)
+        self.dominant_ratio = float(self.get_parameter('dominant_ratio').value)
+        self.min_world_delta_x = float(self.get_parameter('min_world_delta_x').value)
+        self.min_world_delta_z = float(self.get_parameter('min_world_delta_z').value)
         
         # 添加夹爪控制发布器
         self.left_gripper_pub = self.create_publisher(
@@ -112,16 +133,32 @@ class TeleopEndEffectorControl(Node):
         
         # 状态变量 - 机械臂状态
         self.left_arm_state = {
-            'position': self.INITIAL_LEFT_POSITION.copy(),  # 左臂初始位置
+            'position': self.INITIAL_LEFT_POSITION.copy(),  # 左臂初始位置(绝对)
             'prev_position': None,
+            'yaw': 0.0,
+            'prev_yaw': None,
             'gripper_open': True,  # 夹爪状态
-            'prev_gripper_open': True
+            'prev_gripper_open': True,
+            # 相对位移锚点与当前相对量（基于图像手腕点）
+            'anchor_cam_xy': None,
+            'anchor_counter': 0,
+            'relative_world_dx': 0.0,
+            'relative_world_dz': 0.0,
+            # 最近一次可用于日志的相对目标（dx, dz, yaw）
+            'last_relative': (0.0, 0.0, 0.0)
         }
         self.right_arm_state = {
-            'position': self.INITIAL_RIGHT_POSITION.copy(),  # 右臂初始位置
+            'position': self.INITIAL_RIGHT_POSITION.copy(),  # 右臂初始位置(绝对)
             'prev_position': None,
+            'yaw': 0.0,
+            'prev_yaw': None,
             'gripper_open': True,
-            'prev_gripper_open': True
+            'prev_gripper_open': True,
+            'anchor_cam_xy': None,
+            'anchor_counter': 0,
+            'relative_world_dx': 0.0,
+            'relative_world_dz': 0.0,
+            'last_relative': (0.0, 0.0, 0.0)
         }
         
         # 手势识别状态（用于去抖动）
@@ -147,10 +184,11 @@ class TeleopEndEffectorControl(Node):
                               f'Y[{self.workspace_y_min}, {self.workspace_y_max}], '
                               f'Z[{self.workspace_z_min}, {self.workspace_z_max}]')
         self.get_logger().info('=== 使用说明 ===')
-        self.get_logger().info('手臂控制: 直接映射模式')
-        self.get_logger().info('  - 向前伸手 → 机械臂向前移动')
-        self.get_logger().info('  - 左右移动 → 机械臂左右移动')
+        self.get_logger().info('手臂控制: 3DOF(X/Z/偏航) + 手势')
+        self.get_logger().info('映射: 手腕X→末端X, 手腕高度Y→末端Z, 手腕旋转→末端偏航')
+        self.get_logger().info('  - 手臂左右移动 → 机械臂平面内左右移动')
         self.get_logger().info('  - 抬起手臂 → 机械臂上升')
+        self.get_logger().info('  - 掌心面向屏幕旋转 → 机械臂旋转手腕关节')
         self.get_logger().info('手势控制:')
         self.get_logger().info('  - 张开手掌 → 打开夹爪')
         self.get_logger().info('  - 握拳 → 关闭夹爪')
@@ -164,6 +202,15 @@ class TeleopEndEffectorControl(Node):
         self.left_arm_state['position'] = self.INITIAL_LEFT_POSITION.copy()
         self.left_arm_state['prev_position'] = None
         self.left_arm_state['gripper_open'] = True
+        # 清锚点/相对
+        self.left_arm_state['anchor_cam_xy'] = None
+        self.left_arm_state['anchor_counter'] = 0
+        self.left_arm_state['relative_world_dx'] = 0.0
+        self.left_arm_state['relative_world_dz'] = 0.0
+        self.left_arm_state['last_relative'] = (0.0, 0.0, 0.0)
+        self.left_arm_state['yaw'] = 0.0
+        self.left_arm_state['prev_yaw'] = None
+
         self.publish_endeffector_command('left')
         self.publish_gripper_command('left', True)
         
@@ -171,6 +218,15 @@ class TeleopEndEffectorControl(Node):
         self.right_arm_state['position'] = self.INITIAL_RIGHT_POSITION.copy()
         self.right_arm_state['prev_position'] = None
         self.right_arm_state['gripper_open'] = True
+        # 清锚点/相对
+        self.right_arm_state['anchor_cam_xy'] = None
+        self.right_arm_state['anchor_counter'] = 0
+        self.right_arm_state['relative_world_dx'] = 0.0
+        self.right_arm_state['relative_world_dz'] = 0.0
+        self.right_arm_state['last_relative'] = (0.0, 0.0, 0.0)
+        self.right_arm_state['yaw'] = 0.0
+        self.right_arm_state['prev_yaw'] = None
+
         self.publish_endeffector_command('right')
         self.publish_gripper_command('right', True)
         
@@ -179,6 +235,83 @@ class TeleopEndEffectorControl(Node):
         self.gesture_buffer['right'].clear()
         
         self.get_logger().info('✅ 已重置到初始位置: 左臂(0.6, 0.3, 0.7), 右臂(0.6, -0.3, 0.7)')
+
+    def estimate_wrist_yaw(self, hand_landmarks):
+        """根据手部关键点估计手腕绕垂直轴的偏航角(弧度)，精度可较低，附带去噪"""
+        if hand_landmarks is None:
+            return None
+        lm = hand_landmarks.landmark
+        # 选用腕点(0)到中指根(9)和食指根(5)的向量平均作为手掌朝向
+        try:
+            wx, wy = lm[0].x, lm[0].y
+            v1 = np.array([lm[9].x - wx, lm[9].y - wy])
+            v2 = np.array([lm[5].x - wx, lm[5].y - wy])
+            v = (v1 + v2) * 0.5
+            if np.linalg.norm(v) < 1e-6:
+                return None
+            # 图像坐标系: x向右, y向下。atan2(dy,dx)
+            raw_angle = np.arctan2(v[1], v[0])
+            # 将角度映射到[-pi,pi]
+            if raw_angle > np.pi:
+                raw_angle -= 2*np.pi
+            if raw_angle < -np.pi:
+                raw_angle += 2*np.pi
+            return float(raw_angle)
+        except Exception:
+            return None
+
+    def smooth_yaw(self, new_yaw, prev_yaw):
+        """对偏航进行一阶低通与小死区处理"""
+        if new_yaw is None:
+            return prev_yaw if prev_yaw is not None else 0.0
+        if prev_yaw is None:
+            prev_yaw = new_yaw
+        # 小死区: 角度变化过小则忽略
+        if abs(new_yaw - prev_yaw) < self.yaw_deadband:
+            return prev_yaw
+        return self.yaw_alpha * new_yaw + (1.0 - self.yaw_alpha) * prev_yaw
+
+    def update_relative_from_cam(self, arm_state, cam_xy):
+        """基于图像手腕点(归一化xy)计算相对位移(世界坐标dx,dz)，并记录last_relative"""
+        if cam_xy is None:
+            return
+        if arm_state['anchor_cam_xy'] is None:
+            arm_state['anchor_cam_xy'] = cam_xy
+            arm_state['anchor_counter'] = 1
+            arm_state['relative_world_dx'] = 0.0
+            arm_state['relative_world_dz'] = 0.0
+            arm_state['last_relative'] = (0.0, 0.0, float(arm_state['yaw'] if arm_state['yaw'] is not None else 0.0))
+            return
+        # 锚定稳定期计数
+        if arm_state['anchor_counter'] < self.anchor_wait_frames:
+            arm_state['anchor_counter'] += 1
+        # 计算相对(相对于首次可见锚点a)，图像坐标差->世界坐标差
+        ax, ay = arm_state['anchor_cam_xy']
+        cx, cy = cam_xy
+        # 去敏感化：若相机归一化位移过小，保持相对位移不变
+        cam_dx = cx - ax
+        cam_dy = cy - ay
+        cam_dist = np.hypot(cam_dx, cam_dy)
+        if cam_dist < self.min_cam_delta:
+            dx_world = arm_state['relative_world_dx']
+            dz_world = arm_state['relative_world_dz']
+        else:
+            # x: [0,1]映射到workspace_x范围
+            dx_world = cam_dx * (self.workspace_x_max - self.workspace_x_min)
+            # z: 图像y越小越高 -> 世界z增大，因此dz为-(cy-ay)乘以高度范围
+            dz_world = -cam_dy * (self.workspace_z_max - self.workspace_z_min)
+            # 世界层面的死区
+            if abs(dx_world - arm_state['relative_world_dx']) < self.min_world_delta_x:
+                dx_world = arm_state['relative_world_dx']
+            if abs(dz_world - arm_state['relative_world_dz']) < self.min_world_delta_z:
+                dz_world = arm_state['relative_world_dz']
+        arm_state['relative_world_dx'] = float(dx_world)
+        arm_state['relative_world_dz'] = float(dz_world)
+        arm_state['last_relative'] = (
+            float(dx_world),
+            float(dz_world),
+            float(arm_state['yaw'] if arm_state['yaw'] is not None else 0.0)
+        )
     
     def recognize_hand_gesture(self, hand_landmarks):
         """识别手势：返回'open'(张开)或'closed'(握拳)"""
@@ -242,55 +375,39 @@ class TeleopEndEffectorControl(Node):
     
     def calculate_endeffector_pose(self, pose_landmarks, arm='left'):
         """
-        计算末端执行器位姿 (3D位置 - X, Y, Z)
-        
-        新映射策略:
-        - X轴: 手腕前后位置 -> 机械臂X轴移动
-        - Y轴: 手腕左右位置 -> 机械臂Y轴移动
-        - Z轴: 手腕高度 -> 机械臂Z轴移动（抬手=上升）
+        计算末端执行器位姿 (3D位置 - X, Y, Z) 及图像手腕点
+
+        新映射策略(按需求):
+        - X轴: 手腕X图像坐标 → 机械臂X轴(前后)
+        - Z轴: 手腕Y图像高度 → 机械臂Z轴(上下)
+        - Y轴: 固定到该臂侧的初始偏移
         """
         landmarks = pose_landmarks.landmark
         
-        # 选择对应手臂的关键点
+        # 选择对应手臂的关键点（镜像修正：脚本中的left臂使用右侧关键点，right臂使用左侧关键点）
         if arm == 'left':
-            shoulder_idx = self.keypoints['LEFT_SHOULDER']
-            wrist_idx = self.keypoints['LEFT_WRIST']
-        else:
             shoulder_idx = self.keypoints['RIGHT_SHOULDER']
             wrist_idx = self.keypoints['RIGHT_WRIST']
+        else:
+            shoulder_idx = self.keypoints['LEFT_SHOULDER']
+            wrist_idx = self.keypoints['LEFT_WRIST']
         
         # 检查可见性（提高阈值，更严格）
         if landmarks[wrist_idx].visibility < 0.7 or landmarks[shoulder_idx].visibility < 0.7:
             return None
         
-        # 获取当前位置
-        shoulder = np.array([landmarks[shoulder_idx].x, landmarks[shoulder_idx].y, landmarks[shoulder_idx].z])
-        wrist = np.array([landmarks[wrist_idx].x, landmarks[wrist_idx].y, landmarks[wrist_idx].z])
-        
-        # 检查手腕是否在合理范围内（防止部分遮挡或边缘情况）
-        # MediaPipe坐标范围是[0, 1]，我们要求在[0.1, 0.9]范围内
-        if not (0.1 < wrist[0] < 0.9 and 0.1 < wrist[1] < 0.9):
-            return None  # 手腕太靠近画面边缘，可能即将离开
-        
-        # 使用相对于肩膀的位置进行映射
-        relative = wrist - shoulder
-        
-        # X轴: 手臂前后伸展
-        # MediaPipe Z: 负值=向前，正值=向后
-        x = np.interp(-relative[2], [-0.5, 0.3], [self.workspace_x_min, self.workspace_x_max])
-        
-        # Y轴: 手臂左右位置
-        if arm == 'left':
-            # 左臂：手向左移动→机械臂向左移动
-            y = np.interp(relative[0], [-0.2, 0.5], [self.workspace_y_min, self.workspace_y_max])
-        else:
-            # 右臂：手向右移动→机械臂向右移动
-            y = np.interp(-relative[0], [-0.2, 0.5], [self.workspace_y_min, self.workspace_y_max])
-        
-        # Z轴: 手腕高度（抬手=上升）
-        # MediaPipe Y: 0(上) 到 1(下)，需要反转
-        # 使用手腕的绝对Y坐标
-        z = np.interp(1.0 - wrist[1], [0.3, 0.9], [self.workspace_z_min, self.workspace_z_max])
+        # 获取图像坐标（0-1）
+        wrist = np.array([landmarks[wrist_idx].x, landmarks[wrist_idx].y])
+        # 合理范围校验
+        if not (0.05 < wrist[0] < 0.95 and 0.05 < wrist[1] < 0.95):
+            return None
+
+        # X: 直接用图像x从[0,1]映射到工作空间[x_min,x_max]
+        x = np.interp(wrist[0], [0.0, 1.0], [self.workspace_x_min, self.workspace_x_max])
+        # Z: 图像y越小越高，映射到[z_min,z_max]
+        z = np.interp(1.0 - wrist[1], [0.0, 1.0], [self.workspace_z_min, self.workspace_z_max])
+        # Y固定
+        y = self.fixed_y_left if arm == 'left' else self.fixed_y_right
         
         # 限制在工作空间内
         x = np.clip(x, self.workspace_x_min, self.workspace_x_max)
@@ -298,8 +415,8 @@ class TeleopEndEffectorControl(Node):
         z = np.clip(z, self.workspace_z_min, self.workspace_z_max)
         
         position = np.array([x, y, z])
-        
-        return {'position': position}
+        # 返回图像手腕点用于相对位移计算
+        return {'position': position, 'cam_wrist': (float(wrist[0]), float(wrist[1]))}
     
     def smooth_motion(self, current, previous, alpha=None):
         """运动平滑滤波"""
@@ -310,7 +427,7 @@ class TeleopEndEffectorControl(Node):
         return alpha * current + (1 - alpha) * previous
     
     def publish_endeffector_command(self, arm='left'):
-        """发布末端执行器目标位置"""
+        """发布末端执行器目标位置，附带偏航(第4位)并输出相对位移日志"""
         if arm == 'left':
             state = self.left_arm_state
             publisher = self.left_ee_pub
@@ -318,12 +435,13 @@ class TeleopEndEffectorControl(Node):
             state = self.right_arm_state
             publisher = self.right_ee_pub
         
-        # 构建消息: [x, y, z]
+        # 构建消息: [x, y, z, yaw]
         msg = Float64MultiArray()
         msg.data = [
             float(state['position'][0]),
             float(state['position'][1]),
-            float(state['position'][2])
+            float(state['position'][2]),
+            float(state['yaw'] if state['yaw'] is not None else 0.0)
         ]
         
         publisher.publish(msg)
@@ -336,7 +454,8 @@ class TeleopEndEffectorControl(Node):
         setattr(self, f'_{arm}_pub_count', count + 1)
         
         if count % 30 == 0:  # 每30帧输出一次
-            self.get_logger().info(f'📤 [{arm}臂] 发送目标: X={msg.data[0]:.3f}, Y={msg.data[1]:.3f}, Z={msg.data[2]:.3f}')
+            rel_dx, rel_dz, rel_yaw = state.get('last_relative', (0.0, 0.0, 0.0))
+            self.get_logger().info(f'[{arm}臂] 发送相对位置目标xyz: x={rel_dx:.3f}m, y={rel_dz:.3f}m, z={rel_yaw:.2f}rad')
     
     def publish_gripper_command(self, arm='left', open_gripper=True):
         """发布夹爪命令"""
@@ -470,13 +589,15 @@ class TeleopEndEffectorControl(Node):
             left_is_visible = sum(self.visibility_buffer['left']) >= len(self.visibility_buffer['left']) * self.visibility_threshold
             right_is_visible = sum(self.visibility_buffer['right']) >= len(self.visibility_buffer['right']) * self.visibility_threshold
             
-            # 更新左臂位置（只有当稳定可见且有有效位姿时才更新）
+            # 更新左臂位置（加入去敏感化）
             if left_pose is not None and left_is_visible:
                 self.left_arm_state['position'] = self.smooth_motion(
                     left_pose['position'], 
                     self.left_arm_state['prev_position']
                 )
                 self.left_arm_state['prev_position'] = self.left_arm_state['position'].copy()
+                # 更新相对位移(基于图像手腕点)
+                self.update_relative_from_cam(self.left_arm_state, left_pose.get('cam_wrist'))
                 
                 # 发布控制命令
                 self.publish_endeffector_command('left')
@@ -491,13 +612,14 @@ class TeleopEndEffectorControl(Node):
                     self._left_invisible_warned = True
                     self.get_logger().info('⚠️  左臂不可见，保持当前位置不动')
             
-            # 更新右臂位置（只有当稳定可见且有有效位姿时才更新）
+            # 更新右臂位置（加入去敏感化）
             if right_pose is not None and right_is_visible:
                 self.right_arm_state['position'] = self.smooth_motion(
                     right_pose['position'],
                     self.right_arm_state['prev_position']
                 )
                 self.right_arm_state['prev_position'] = self.right_arm_state['position'].copy()
+                self.update_relative_from_cam(self.right_arm_state, right_pose.get('cam_wrist'))
                 
                 # 发布控制命令
                 self.publish_endeffector_command('right')
@@ -515,9 +637,9 @@ class TeleopEndEffectorControl(Node):
             # 完全没有检测到人体姿态
             if not hasattr(self, '_no_pose_warned'):
                 self._no_pose_warned = True
-                self.get_logger().debug('未检测到人体姿态，机械臂保持当前位置')
+                self.get_logger().debug('⚠️ 未检测到人体姿态，机械臂保持当前位置')
         
-        # 处理手部手势识别
+        # 处理手部手势识别 + 偏航估计
         if hands_results.multi_hand_landmarks and hands_results.multi_handedness:
             for hand_landmarks, handedness in zip(hands_results.multi_hand_landmarks, hands_results.multi_handedness):
                 # 确定是左手还是右手（注意镜像翻转）
@@ -543,6 +665,20 @@ class TeleopEndEffectorControl(Node):
                         if stable_gesture != self.right_arm_state['gripper_open']:
                             self.right_arm_state['gripper_open'] = stable_gesture
                             self.publish_gripper_command('right', stable_gesture)
+
+                # 估计偏航角并平滑
+                yaw_new = self.estimate_wrist_yaw(hand_landmarks)
+                if arm == 'left':
+                    self.left_arm_state['yaw'] = self.smooth_yaw(yaw_new, self.left_arm_state['prev_yaw'])
+                    self.left_arm_state['prev_yaw'] = self.left_arm_state['yaw']
+                    # 更新last_relative中的yaw部分
+                    dx, dz, _ = self.left_arm_state['last_relative']
+                    self.left_arm_state['last_relative'] = (dx, dz, float(self.left_arm_state['yaw']))
+                else:
+                    self.right_arm_state['yaw'] = self.smooth_yaw(yaw_new, self.right_arm_state['prev_yaw'])
+                    self.right_arm_state['prev_yaw'] = self.right_arm_state['yaw']
+                    dx, dz, _ = self.right_arm_state['last_relative']
+                    self.right_arm_state['last_relative'] = (dx, dz, float(self.right_arm_state['yaw']))
         
         # 绘制可视化
         image = self.draw_visualization(image, pose_results.pose_landmarks, hands_results)
