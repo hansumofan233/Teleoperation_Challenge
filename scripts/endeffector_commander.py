@@ -19,7 +19,11 @@ class EndEffectorCommander(Node):
         super().__init__('endeffector_commander')
         # 调试：使用序号对齐日志
         self.declare_parameter('debug_log_every_n', 30)
+        self.declare_parameter('joint_state_rate', 10.0)  # Hz
+        self.declare_parameter('position_change_threshold', 0.005)  # m
         self.debug_log_every_n = int(self.get_parameter('debug_log_every_n').value)
+        self.joint_state_rate = float(self.get_parameter('joint_state_rate').value)
+        self.position_change_threshold = float(self.get_parameter('position_change_threshold').value)
         
         # 订阅末端执行器目标
         self.left_ee_sub = self.create_subscription(
@@ -278,10 +282,15 @@ class EndEffectorCommander(Node):
         # 上一次的目标位置（用于检测变化）
         self.left_last_target = None
         self.right_last_target = None
-        self.position_change_threshold = 0.005  # 5mm的变化阈值
+        # 5mm的变化阈值（可通过参数覆盖）
+        # self.position_change_threshold 已在参数读取处设置
         
-        # 创建定时器定期发布完整的关节状态（低频率，用于RViz初始化）
-        self.joint_state_timer = self.create_timer(1.0, self.publish_complete_joint_state)
+        # 创建定时器定期发布完整的关节状态（用于RViz/robot_state_publisher）
+        period = 1.0 / self.joint_state_rate if self.joint_state_rate > 0.0 else 1.0
+        self.joint_state_timer = self.create_timer(period, self.publish_complete_joint_state)
+
+        # 立即发布一次完整关节状态，避免 RViz 初始阶段缺少 TF
+        self.publish_complete_joint_state()
         
         # 基座位置和旋转（从URDF）
         # 两个机械臂都旋转了-90度（-1.5708 rad），即逆时针旋转90度
@@ -467,10 +476,9 @@ class EndEffectorCommander(Node):
     
     def compare_joint_states(self):
         """显示当前关节状态调试信息"""
-        self.get_logger().info('\n' + '='*80)
-        self.get_logger().info('当前关节状态 (每秒更新)')
-        self.get_logger().info('注意: RViz仿真模式下,显示的是命令值(即期望的实际值)')
         self.get_logger().info('='*80)
+        self.get_logger().info('当前关节状态 (RViz仿真模式下期望的实际值)')
+
         
         # 左臂状态
         if self.left_target_joints is not None:
@@ -656,7 +664,7 @@ class EndEffectorCommander(Node):
         if (seq is not None and seq % self.debug_log_every_n == 0) or \
            (seq is None and self._right_callback_count % self.debug_log_every_n == 1):
             suffix = f" (seq={seq})" if seq is not None else ""
-            self.get_logger().info(f'📬 [右臂] 接收相对目标: ΔX={target_x:.3f}m, ΔZ={target_y:.3f}m, ΔYaw={target_z:.3f}rad{suffix}')
+            self.get_logger().info(f'[右臂] 接收相对目标: ΔX={target_x:.3f}m, ΔZ={target_y:.3f}m, ΔYaw={target_z:.3f}rad{suffix}')
         
         # 求解逆运动学
         try:
@@ -690,7 +698,7 @@ class EndEffectorCommander(Node):
             # 调试输出：发布的关节角度
             if (seq is not None and seq % self.debug_log_every_n == 0) or \
                (seq is None and self._right_callback_count % self.debug_log_every_n == 1):
-                self.get_logger().info(f'🤖 [右臂] 发布关节命令: [{", ".join([f"{j:.3f}" for j in joint_positions])}]')
+                self.get_logger().info(f'[右臂] 发布关节命令: [{", ".join([f"{j:.3f}" for j in joint_positions])}]')
                 joint_degrees = [f"{np.degrees(j):6.1f}°" for j in joint_positions]
                 self.get_logger().info(f'         角度: [{", ".join(joint_degrees)}]')
             

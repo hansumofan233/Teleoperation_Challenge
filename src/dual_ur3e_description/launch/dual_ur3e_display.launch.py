@@ -3,7 +3,7 @@
 import os
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, Command
+from launch.substitutions import LaunchConfiguration, Command, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 from launch.conditions import IfCondition, UnlessCondition
@@ -17,6 +17,7 @@ def generate_launch_description():
     # Launch参数
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_gui = LaunchConfiguration('use_gui')
+    enable_jsp = LaunchConfiguration('enable_jsp')
     
     # 文件路径
     urdf_file = os.path.join(pkg_dir, 'urdf', 'dual_ur3e.urdf.xacro')
@@ -46,6 +47,12 @@ def generate_launch_description():
             description='Start joint_state_publisher_gui (set to false for teleoperation)'
         ),
         
+        DeclareLaunchArgument(
+            'enable_jsp',
+            default_value='false',
+            description='Start joint_state_publisher (disable when another node publishes /joint_states)'
+        ),
+        
         # Robot State Publisher
         Node(
             package='robot_state_publisher',
@@ -63,7 +70,7 @@ def generate_launch_description():
             package='joint_state_publisher_gui',
             executable='joint_state_publisher_gui',
             name='joint_state_publisher_gui',
-            condition=IfCondition(use_gui)
+            condition=IfCondition(PythonExpression(["'", enable_jsp, "' == 'true' and '", use_gui, "' == 'true' "]))
         ),
 
         # Joint State Publisher (non-GUI) - only if use_gui is false
@@ -74,7 +81,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         initial_joint_positions],
-            condition=UnlessCondition(use_gui)
+            condition=IfCondition(PythonExpression(["'", enable_jsp, "' == 'true' and '", use_gui, "' != 'true'"]))
         ),
 
         # RViz2
