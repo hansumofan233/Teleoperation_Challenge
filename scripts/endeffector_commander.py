@@ -272,6 +272,10 @@ class EndEffectorCommander(Node):
         # 目标关节状态（发布的命令）
         self.left_target_joints = None
         self.right_target_joints = None
+
+        # 夹爪最近一次接收的命令值（0.0=打开, 1.0=关闭），用于在指定日志位置展示
+        self.left_gripper_received = 0.0
+        self.right_gripper_received = 0.0
         
         # 关节平滑系数（减少抖动）
         self.joint_smoothing = 0.3  # 30%新值，70%旧值
@@ -482,31 +486,35 @@ class EndEffectorCommander(Node):
         
         # 左臂状态
         if self.left_target_joints is not None:
-            self.get_logger().info(f'\n左臂关节状态:')
+            self.get_logger().info(f'  左臂关节状态:')
             self.get_logger().info(f'  关节角度: [{" ".join([f"{j:7.3f}" for j in self.left_target_joints])}]')
             self.get_logger().info(f'  角度(度): [{" ".join([f"{np.degrees(j):7.1f}" for j in self.left_target_joints])}]')
-            
-            # 计算与上次的变化
-            if self.left_actual_joints is not None:
-                change = np.abs(self.left_target_joints - self.left_actual_joints)
-                max_change = np.max(change)
-                self.get_logger().info(f'  最大变化: {np.degrees(max_change):.2f}° (与上次比较)')
-                if max_change > 0.5:  # 大于0.5弧度（约28.6°）
-                    self.get_logger().warn(f'左臂单帧变化过大: {np.degrees(max_change):.2f}° - 可能导致抖动')
+            # 左夹爪（实际：依据当前关节值反推，语义与接收一致 0=打开,1=关闭）
+            try:
+                _lk = self.all_joint_positions.get('left_robotiq_85_left_knuckle_joint', None)
+                if _lk is not None:
+                    _actual_left = 1.0 - np.clip(_lk / 0.8, 0.0, 1.0)
+                else:
+                    _actual_left = float(self.left_gripper_received)
+            except Exception:
+                _actual_left = float(self.left_gripper_received)
+            self.get_logger().info(f'  左夹爪实际状态: {_actual_left:.2f}')
         
         # 右臂状态
         if self.right_target_joints is not None:
-            self.get_logger().info(f'\n右臂关节状态:')
+            self.get_logger().info(f'  右臂关节状态:')
             self.get_logger().info(f'  关节角度: [{" ".join([f"{j:7.3f}" for j in self.right_target_joints])}]')
             self.get_logger().info(f'  角度(度): [{" ".join([f"{np.degrees(j):7.1f}" for j in self.right_target_joints])}]')
-            
-            # 计算与上次的变化
-            if self.right_actual_joints is not None:
-                change = np.abs(self.right_target_joints - self.right_actual_joints)
-                max_change = np.max(change)
-                self.get_logger().info(f'  最大变化: {np.degrees(max_change):.2f}° (与上次比较)')
-                if max_change > 0.5:
-                    self.get_logger().warn(f'右臂单帧变化过大: {np.degrees(max_change):.2f}° - 可能导致抖动')
+            # 右夹爪（实际：依据当前关节值反推，语义与接收一致 0=打开,1=关闭）
+            try:
+                _rk = self.all_joint_positions.get('right_robotiq_85_left_knuckle_joint', None)
+                if _rk is not None:
+                    _actual_right = 1.0 - np.clip(_rk / 0.8, 0.0, 1.0)
+                else:
+                    _actual_right = float(self.right_gripper_received)
+            except Exception:
+                _actual_right = float(self.right_gripper_received)
+            self.get_logger().info(f'  右夹爪实际状态: {_actual_right:.2f}')
         
         self.get_logger().info('='*80 + '\n')
     
@@ -547,6 +555,8 @@ class EndEffectorCommander(Node):
            (seq is None and self._left_callback_count % self.debug_log_every_n == 1):
             suffix = f" (seq={seq})" if seq is not None else ""
             self.get_logger().info(f'[左臂] 接收相对目标: ΔX={target_x:.3f}m, ΔZ={target_y:.3f}m, ΔYaw={target_z:.3f}rad{suffix}')
+            # 在接收相对目标之后，输出左夹爪(接收)
+            self.get_logger().info(f'左夹爪接收目标: {self.left_gripper_received:.2f}')
         
         # 求解逆运动学
         try:
@@ -597,11 +607,13 @@ class EndEffectorCommander(Node):
         if len(msg.data) < 1:
             return
         
-        gripper_position = msg.data[0]  # 0.0=关闭, 1.0=打开
+        gripper_position = msg.data[0]  # 0.0=打开, 1.0=关闭
+        # 记录最近一次接收的命令值，供指定日志位置使用
+        self.left_gripper_received = float(gripper_position)
         
         # 更新夹爪关节状态
-        # Robotiq 85夹爪: 0.0=关闭, 0.8=完全打开
-        gripper_value = gripper_position * 0.8
+        # Robotiq 85夹爪: 0.0=打开, 0.8=完全关闭
+        gripper_value = (1.0 - gripper_position) * 0.8
         
         self.all_joint_positions['left_robotiq_85_left_knuckle_joint'] = gripper_value
         self.all_joint_positions['left_robotiq_85_right_knuckle_joint'] = gripper_value
@@ -610,15 +622,17 @@ class EndEffectorCommander(Node):
         self.all_joint_positions['left_robotiq_85_left_finger_tip_joint'] = gripper_value
         self.all_joint_positions['left_robotiq_85_right_finger_tip_joint'] = gripper_value
         
-        self.get_logger().info(f'左夹爪: {gripper_position:.2f}')
+        # 日志按用户要求在其他位置输出
     
     def right_gripper_callback(self, msg):
         """处理右臂夹爪命令"""
         if len(msg.data) < 1:
             return
         
-        gripper_position = msg.data[0]
-        gripper_value = gripper_position * 0.8
+        gripper_position = msg.data[0]  # 0.0=打开, 1.0=关闭（反转以符合期望）
+        # 记录最近一次接收的命令值
+        self.right_gripper_received = float(gripper_position)
+        gripper_value = (1.0 - gripper_position) * 0.8
         
         self.all_joint_positions['right_robotiq_85_left_knuckle_joint'] = gripper_value
         self.all_joint_positions['right_robotiq_85_right_knuckle_joint'] = gripper_value
@@ -627,7 +641,7 @@ class EndEffectorCommander(Node):
         self.all_joint_positions['right_robotiq_85_left_finger_tip_joint'] = gripper_value
         self.all_joint_positions['right_robotiq_85_right_finger_tip_joint'] = gripper_value
         
-        self.get_logger().info(f'右夹爪: {gripper_position:.2f}')
+        # 日志按用户要求在其他位置输出
     
     def right_ee_callback(self, msg):
         """处理右臂末端执行器目标"""
@@ -665,6 +679,8 @@ class EndEffectorCommander(Node):
            (seq is None and self._right_callback_count % self.debug_log_every_n == 1):
             suffix = f" (seq={seq})" if seq is not None else ""
             self.get_logger().info(f'[右臂] 接收相对目标: ΔX={target_x:.3f}m, ΔZ={target_y:.3f}m, ΔYaw={target_z:.3f}rad{suffix}')
+            # 在接收相对目标之后，输出右夹爪(接收)
+            self.get_logger().info(f'右夹爪接收状态: {self.right_gripper_received:.2f}')
         
         # 求解逆运动学
         try:
