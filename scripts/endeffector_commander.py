@@ -278,7 +278,7 @@ class EndEffectorCommander(Node):
         self.right_gripper_received = 0.0
         
         # 关节平滑系数（减少抖动）
-        self.joint_smoothing = 0.3  # 30%新值，70%旧值
+        self.joint_smoothing = 0.2  # 降低迟滞，提高跟随
         
         # 调试计数器
         self.debug_counter = 0
@@ -302,6 +302,45 @@ class EndEffectorCommander(Node):
         self.right_base_pos = np.array([-0.5, 0.5, 0.775])
         self.base_rotation = -np.pi/2  # -90度旋转
         
+        # 平面IK工作空间夹限（基于简化几何，避免不可达目标）
+        self.x_min = 0.05
+        self.x_max = self.a2 + self.a3 - 0.05
+        self.z_min = self.d1 - 0.05
+        self.z_max = self.d1 + self.a2 + self.a3 - 0.05
+
+        # 坐标轴方向与增益修正：
+        # - invert_relative_z: 是否反转 Teleop 的 ΔZ（世界坐标“上”为负时开启）
+        # - relative_z_gain: 相对ΔZ的增益因子，用于增强向上的幅度
+        self.declare_parameter('invert_relative_z', True)
+        self.declare_parameter('relative_z_gain', 1.5)
+        self.invert_relative_z = bool(self.get_parameter('invert_relative_z').value)
+        self.relative_z_gain = float(self.get_parameter('relative_z_gain').value)
+
+        # 以当前关节状态计算平面FK，用作初始绝对目标
+        def _fk_xzyaw(j):
+            q1, q2, q3, q4, q5, q6 = j
+            x = (self.a2 * np.cos(q2) + self.a3 * np.cos(q2 + q3))
+            z = self.d1 + self.a2 * np.sin(q2) + self.a3 * np.sin(q2 + q3)
+            yaw = q4
+            return float(x), float(z), float(yaw)
+
+        lx, lz, lyaw = _fk_xzyaw(self.left_current_joints)
+        rx, rz, ryaw = _fk_xzyaw(self.right_current_joints)
+
+        # 绝对末端目标（由相对量增量积分而来）
+        self.left_goal = {
+            'x': np.clip(lx, self.x_min, self.x_max),
+            'z': np.clip(lz, self.z_min, self.z_max),
+            'yaw': lyaw,
+            'last_rel': np.array([0.0, 0.0, 0.0], dtype=float)  # 上次收到的[ΔX,ΔZ,ΔYaw]
+        }
+        self.right_goal = {
+            'x': np.clip(rx, self.x_min, self.x_max),
+            'z': np.clip(rz, self.z_min, self.z_max),
+            'yaw': ryaw,
+            'last_rel': np.array([0.0, 0.0, 0.0], dtype=float)
+        }
+
         self.get_logger().info('末端执行器命令转换节点已启动')
     
     def world_to_base_frame(self, world_x, world_y, world_z, base_pos):
@@ -347,8 +386,8 @@ class EndEffectorCommander(Node):
 
         # 目标解释：若为相对位移，则直接将 X→local_x，Y→local_z；否则做世界→基座变换
         if interpret_relative:
-            local_x = target_x   # 手腕X → 末端X(局部)
-            local_z = target_y   # 手腕Y → 末端Z(局部高度)
+            local_x = target_x   # 目标末端绝对X（已在外部处理为绝对）
+            local_z = target_y   # 目标末端绝对Z（已在外部处理为绝对）
         else:
             base_pos = self.left_base_pos if arm == 'left' else self.right_base_pos
             local_x, _local_y, local_z = self.world_to_base_frame(target_x, target_y, target_z, base_pos)
@@ -376,21 +415,34 @@ class EndEffectorCommander(Node):
             fk_x, fk_z, fk_yaw = forward_kinematics_simplified(joints)
 
             # 位置误差：只考虑 x 与 z，y忽略以匹配输入定义
-            pos_error = (fk_x - local_x) ** 2 + (fk_z - local_z) ** 2
+            pos_error = (fk_x - local_x) ** 2 + 1.2 * (fk_z - local_z) ** 2
 
             # 偏航误差(使用滤波后的目标角)
             rot_error = (fk_yaw - target_rot_z_filtered) ** 2
 
-            # 平滑惩罚：限制相对上一状态的跳变
-            joint_change = np.sum((joints - current_joints) ** 2) * 0.3
+            # 平滑惩罚：限制相对上一状态的跳变（强化肘参与）
+            q1c, q2c, q3c, q4c, q5c, q6c = current_joints
+            q1n, q2n, q3n, q4n, q5n, q6n = joints
+            joint_change = (
+                (q1n - q1c) ** 2 +
+                0.8 * (q2n - q2c) ** 2 +
+                0.3 * (q3n - q3c) ** 2 +
+                (q4n - q4c) ** 2 +
+                (q5n - q5c) ** 2 +
+                (q6n - q6c) ** 2
+            ) * 0.25
 
             # 固定关节保持惩罚：q1接近0，q5接近0，q6接近左右设定值
-            q1, _, _, q4, q5, q6 = joints
+            q1, q2, q3, q4, q5, q6 = joints
             fixed_penalty = (q1 - 0.0) ** 2 * 5.0 + (q5 - 0.0) ** 2 * 5.0
             target_q6 = -np.pi if arm == 'left' else np.pi
             fixed_penalty += (q6 - target_q6) ** 2 * 5.0
 
-            return pos_error + rot_error * 0.8 + joint_change + fixed_penalty
+            # 姿态偏好：更强地鼓励肘关节弯曲，避免全部由肩承担
+            q3_pref = np.deg2rad(40.0)
+            posture_penalty = 0.12 * (q3 - q3_pref) ** 2 + 0.02 * q2 ** 2
+
+            return pos_error + rot_error * 0.8 + joint_change + fixed_penalty + posture_penalty
 
         # 使用优化求解，bounds沿用已定义的joint_limits
         result = minimize(
@@ -524,19 +576,26 @@ class EndEffectorCommander(Node):
             self.get_logger().warn('接收到的消息数据不足3个元素')
             return
         
-        target_x, target_y, target_z = msg.data[:3]
-        target_rot_z = target_z  # 将第三维解释为偏航角的相对量
+        rel_dx, rel_dz, rel_dyaw = [float(v) for v in msg.data[:3]]
+        # 计算与上一帧相对量的增量，避免重复积分导致漂移
+        last_rel = self.left_goal['last_rel']
+        inc = np.array([rel_dx, rel_dz, rel_dyaw], dtype=float) - last_rel
+        # 小阈值过滤（分别针对平移与角度）
+        pos_inc_norm = np.hypot(inc[0], inc[1])
+        if pos_inc_norm < 0.003 and abs(inc[2]) < np.deg2rad(1.0):
+            return
+        # 记录为新的上一帧相对量
+        self.left_goal['last_rel'] = np.array([rel_dx, rel_dz, rel_dyaw], dtype=float)
         
-        # 检查目标位置是否发生变化
-        current_target = np.array([target_x, target_y, target_z])
-        if self.left_last_target is not None:
-            position_change = np.linalg.norm(current_target - self.left_last_target)
-            if position_change < self.position_change_threshold:
-                # 位置变化太小，忽略此次更新
-                return
-        
-        # 更新上一次目标位置
-        self.left_last_target = current_target.copy()
+        # 积分到绝对末端目标并夹限
+        self.left_goal['x'] = float(np.clip(self.left_goal['x'] + inc[0], self.x_min, self.x_max))
+        dz_raw = -inc[1] if self.invert_relative_z else inc[1]
+        dz_inc = self.relative_z_gain * dz_raw
+        self.left_goal['z'] = float(np.clip(self.left_goal['z'] + dz_inc, self.z_min, self.z_max))
+        yaw_new = self.left_goal['yaw'] + inc[2]
+        # wrap到[-pi,pi]
+        yaw_new = (yaw_new + np.pi) % (2*np.pi) - np.pi
+        self.left_goal['yaw'] = float(yaw_new)
         
         # 调试信息
         if not hasattr(self, '_left_callback_count'):
@@ -554,14 +613,14 @@ class EndEffectorCommander(Node):
         if (seq is not None and seq % self.debug_log_every_n == 0) or \
            (seq is None and self._left_callback_count % self.debug_log_every_n == 1):
             suffix = f" (seq={seq})" if seq is not None else ""
-            self.get_logger().info(f'[左臂] 接收相对目标: ΔX={target_x:.3f}m, ΔZ={target_y:.3f}m, ΔYaw={target_z:.3f}rad{suffix}')
+            self.get_logger().info(f'[左臂] 接收相对目标: ΔX={rel_dx:.3f}m, ΔZ={rel_dz:.3f}m, ΔYaw={rel_dyaw:.3f}rad{suffix}')
             # 在接收相对目标之后，输出左夹爪(接收)
             self.get_logger().info(f'左夹爪接收目标: {self.left_gripper_received:.2f}')
         
         # 求解逆运动学
         try:
             joint_positions = self.simple_ik_planar(
-                target_x, target_y, target_z, target_rot_z,
+                self.left_goal['x'], self.left_goal['z'], 0.0, self.left_goal['yaw'],
                 self.left_current_joints, 'left', interpret_relative=True
             )
             
@@ -596,6 +655,7 @@ class EndEffectorCommander(Node):
                 self.get_logger().info(f'[左臂] 发布关节命令: [{", ".join([f"{j:.3f}" for j in joint_positions])}]')
                 joint_degrees = [f"{np.degrees(j):6.1f}°" for j in joint_positions]
                 self.get_logger().info(f'         角度: [{", ".join(joint_degrees)}]')
+                self.get_logger().info(f'         目标末端(x,z,yaw): ({self.left_goal["x"]:.3f}, {self.left_goal["z"]:.3f}, {self.left_goal["yaw"]:.3f})')
             
             # 发布关节状态用于RViz
             self.publish_joint_state(joint_positions, joint_names)
@@ -648,19 +708,21 @@ class EndEffectorCommander(Node):
         if len(msg.data) < 3:
             return
         
-        target_x, target_y, target_z = msg.data[:3]
-        target_rot_z = target_z
+        rel_dx, rel_dz, rel_dyaw = [float(v) for v in msg.data[:3]]
+        last_rel = self.right_goal['last_rel']
+        inc = np.array([rel_dx, rel_dz, rel_dyaw], dtype=float) - last_rel
+        pos_inc_norm = np.hypot(inc[0], inc[1])
+        if pos_inc_norm < 0.003 and abs(inc[2]) < np.deg2rad(1.0):
+            return
+        self.right_goal['last_rel'] = np.array([rel_dx, rel_dz, rel_dyaw], dtype=float)
         
-        # 检查目标位置是否发生变化
-        current_target = np.array([target_x, target_y, target_z])
-        if self.right_last_target is not None:
-            position_change = np.linalg.norm(current_target - self.right_last_target)
-            if position_change < self.position_change_threshold:
-                # 位置变化太小，忽略此次更新
-                return
-        
-        # 更新上一次目标位置
-        self.right_last_target = current_target.copy()
+        self.right_goal['x'] = float(np.clip(self.right_goal['x'] + inc[0], self.x_min, self.x_max))
+        dz_raw_r = -inc[1] if self.invert_relative_z else inc[1]
+        dz_inc_r = self.relative_z_gain * dz_raw_r
+        self.right_goal['z'] = float(np.clip(self.right_goal['z'] + dz_inc_r, self.z_min, self.z_max))
+        yaw_new = self.right_goal['yaw'] + inc[2]
+        yaw_new = (yaw_new + np.pi) % (2*np.pi) - np.pi
+        self.right_goal['yaw'] = float(yaw_new)
         
         # 调试信息
         if not hasattr(self, '_right_callback_count'):
@@ -678,14 +740,14 @@ class EndEffectorCommander(Node):
         if (seq is not None and seq % self.debug_log_every_n == 0) or \
            (seq is None and self._right_callback_count % self.debug_log_every_n == 1):
             suffix = f" (seq={seq})" if seq is not None else ""
-            self.get_logger().info(f'[右臂] 接收相对目标: ΔX={target_x:.3f}m, ΔZ={target_y:.3f}m, ΔYaw={target_z:.3f}rad{suffix}')
+            self.get_logger().info(f'[右臂] 接收相对目标: ΔX={rel_dx:.3f}m, ΔZ={rel_dz:.3f}m, ΔYaw={rel_dyaw:.3f}rad{suffix}')
             # 在接收相对目标之后，输出右夹爪(接收)
             self.get_logger().info(f'右夹爪接收状态: {self.right_gripper_received:.2f}')
         
         # 求解逆运动学
         try:
             joint_positions = self.simple_ik_planar(
-                target_x, target_y, target_z, target_rot_z,
+                self.right_goal['x'], self.right_goal['z'], 0.0, self.right_goal['yaw'],
                 self.right_current_joints, 'right', interpret_relative=True
             )
             
@@ -717,6 +779,7 @@ class EndEffectorCommander(Node):
                 self.get_logger().info(f'[右臂] 发布关节命令: [{", ".join([f"{j:.3f}" for j in joint_positions])}]')
                 joint_degrees = [f"{np.degrees(j):6.1f}°" for j in joint_positions]
                 self.get_logger().info(f'         角度: [{", ".join(joint_degrees)}]')
+                self.get_logger().info(f'         目标末端(x,z,yaw): ({self.right_goal["x"]:.3f}, {self.right_goal["z"]:.3f}, {self.right_goal["yaw"]:.3f})')
             
             # 发布关节状态用于RViz
             self.publish_joint_state(joint_positions, joint_names)

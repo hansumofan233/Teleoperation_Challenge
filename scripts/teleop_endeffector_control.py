@@ -57,10 +57,10 @@ class TeleopEndEffectorControl(Node):
         self.declare_parameter('debug_seq_enable', True)
         self.declare_parameter('debug_log_every_n', 30)
         # 去敏感化
-        self.declare_parameter('min_cam_delta', 0.02)  # 相机归一化坐标最小位移阈值
+        self.declare_parameter('min_cam_delta', 0.01)  # 相机归一化坐标最小位移阈值（下调提升灵敏度）
         self.declare_parameter('dominant_ratio', 1.5)  # 主臂位移相对比阈值
-        self.declare_parameter('min_world_delta_x', 0.01)  # 世界坐标最小X变化(m)
-        self.declare_parameter('min_world_delta_z', 0.01)  # 世界坐标最小Z变化(m)
+        self.declare_parameter('min_world_delta_x', 0.005)  # 世界坐标最小X变化(m)
+        self.declare_parameter('min_world_delta_z', 0.003)  # 世界坐标最小Z变化(m) 进一步提升小幅上/下灵敏度
         
         # 获取参数
         self.workspace_x_min = self.get_parameter('workspace_x_min').value
