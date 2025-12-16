@@ -6,7 +6,7 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration, Command
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
@@ -21,6 +21,16 @@ def generate_launch_description():
     # 文件路径
     urdf_file = os.path.join(pkg_dir, 'urdf', 'dual_ur3e.urdf.xacro')
     rviz_config = os.path.join(pkg_dir, 'config', 'dual_ur3e.rviz')
+    
+    # 初始关节位置
+    initial_joint_positions = {
+        'left_wrist_1_joint': -1.5708,
+        'left_wrist_2_joint': 0.0,
+        'left_wrist_3_joint': -3.1416,
+        'right_wrist_1_joint': -1.5708,
+        'right_wrist_2_joint': 0.0,
+        'right_wrist_3_joint': 3.1416,
+    }
     
     return LaunchDescription([
         # Launch参数声明
@@ -48,45 +58,32 @@ def generate_launch_description():
             }]
         ),
         
-        # Joint State Publisher (设置初始腕关节位置)
-        Node(
-            package='joint_state_publisher',
-            executable='joint_state_publisher',
-            name='joint_state_publisher',
-            parameters=[{
-                'use_sim_time': use_sim_time,
-                # 左臂腕关节初始位置 (弧度)
-                'left_wrist_1_joint': -1.5708,      # -90°
-                'left_wrist_2_joint': 0.0,          # 0°
-                'left_wrist_3_joint': -3.1416,      # -180°
-                # 右臂腕关节初始位置 (弧度)
-                'right_wrist_1_joint': -1.5708,     # -90°
-                'right_wrist_2_joint': 0.0,         # 0°
-                'right_wrist_3_joint': 3.1416,      # 180°
-            }],
-            condition=IfCondition(LaunchConfiguration('use_jsp', default='true'))
-        ),
-        
-        # Joint State Publisher GUI (可选，用于手动调试)
+        # Joint State Publisher (GUI) - only if use_gui is true
         Node(
             package='joint_state_publisher_gui',
             executable='joint_state_publisher_gui',
             name='joint_state_publisher_gui',
-            condition=IfCondition(use_gui),
-            parameters=[{'use_sim_time': use_sim_time}]
+            condition=IfCondition(use_gui)
         ),
-        
-        # RViz2 
+
+        # Joint State Publisher (non-GUI) - only if use_gui is false
+        Node(
+            package='joint_state_publisher',
+            executable='joint_state_publisher',
+            name='joint_state_publisher',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time},
+                        initial_joint_positions],
+            condition=UnlessCondition(use_gui)
+        ),
+
+        # RViz2
         Node(
             package='rviz2',
             executable='rviz2',
             name='rviz2',
-            arguments=['-d', rviz_config] if os.path.exists(rviz_config) else [],
-            parameters=[{'use_sim_time': use_sim_time}],
-            additional_env={
-                '__NV_PRIME_RENDER_OFFLOAD': '1',
-                '__GLX_VENDOR_LIBRARY_NAME': 'nvidia'
-            },
-            output='screen'
+            output='screen',
+            arguments=['-d', rviz_config],
+            parameters=[{'use_sim_time': use_sim_time}]
         )
     ])
