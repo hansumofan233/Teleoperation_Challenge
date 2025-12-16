@@ -303,16 +303,19 @@ class EndEffectorCommander(Node):
         self.base_rotation = -np.pi/2  # -90度旋转
         
         # 平面IK工作空间夹限（基于简化几何，避免不可达目标）
+        # 通过参数暴露边界余量以便现场调节
+        self.declare_parameter('workspace_margin', 0.02)
+        margin = float(self.get_parameter('workspace_margin').value)
         self.x_min = 0.05
-        self.x_max = self.a2 + self.a3 - 0.05
-        self.z_min = self.d1 - 0.05
-        self.z_max = self.d1 + self.a2 + self.a3 - 0.05
+        self.x_max = self.a2 + self.a3 - max(0.01, margin)
+        self.z_min = self.d1 - max(0.01, margin)
+        self.z_max = self.d1 + self.a2 + self.a3 - max(0.01, margin)
 
         # 坐标轴方向与增益修正：
         # - invert_relative_z: 是否反转 Teleop 的 ΔZ（世界坐标“上”为负时开启）
         # - relative_z_gain: 相对ΔZ的增益因子，用于增强向上的幅度
         self.declare_parameter('invert_relative_z', True)
-        self.declare_parameter('relative_z_gain', 1.5)
+        self.declare_parameter('relative_z_gain', 2.0)
         self.invert_relative_z = bool(self.get_parameter('invert_relative_z').value)
         self.relative_z_gain = float(self.get_parameter('relative_z_gain').value)
 
@@ -450,7 +453,7 @@ class EndEffectorCommander(Node):
             current_joints,
             method='SLSQP',
             bounds=self.joint_limits,
-            options={'maxiter': 60, 'ftol': 2e-3}
+            options={'maxiter': 100, 'ftol': 1e-3}
         )
 
         if result.success:

@@ -70,8 +70,10 @@ ros2 launch dual_ur3e_description dual_ur3e_display.launch.py
 ```bash
 python3 scripts/endeffector_commander.py
 ```
+注意：仅运行终端1时Rviz不能够正确加载模型是正常的，运行终端2后会正常加载。
+不进行合并启动的原因是：希望在终端2单独监测节点接受状态以及Rviz中当前运动坐标。
 
-- 终端 3：启动遥操作控制（3DOF + 手势）
+- 终端 3：启动遥操作控制（打开摄像头识别动作/手势）
 
 ```bash
 python3 scripts/teleop_endeffector_control.py
