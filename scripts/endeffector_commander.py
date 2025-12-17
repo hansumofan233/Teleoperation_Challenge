@@ -9,7 +9,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, Header
 from std_msgs.msg import Empty
-from std_srvs.srv import Trigger
+from std_srvs.srv import Trigger, SetBool
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 from builtin_interfaces.msg import Duration
@@ -348,9 +348,17 @@ class EndEffectorCommander(Node):
 
         self.get_logger().info('末端执行器命令转换节点已启动')
 
+        # 运行安全状态
+        self.state_enabled = True   # 是否允许运动（SetBool 控制）
+        self.estop_active = False   # 急停是否激活（Trigger 激活，reset 清除）
+
         # 重置参考/姿态：服务与话题
         self.reset_srv = self.create_service(Trigger, '/teleop/reset_reference', self.on_reset_reference)
         self.reset_sub = self.create_subscription(Empty, '/teleop/reset', self.on_reset_reference_msg, 10)
+
+        # 安全启停与急停
+        self.enable_srv = self.create_service(SetBool, '/teleop/enable', self.on_enable)
+        self.estop_srv = self.create_service(Trigger, '/teleop/estop', self.on_estop)
     
     def world_to_base_frame(self, world_x, world_y, world_z, base_pos):
         """
@@ -384,6 +392,8 @@ class EndEffectorCommander(Node):
         - 重置左右末端绝对目标与相对增量
         - 立即发布一次完整关节状态，便于 RViz 同步
         """
+        # 清除急停，但不自动启用，需要外部显式 enable
+        self.estop_active = False
         # 关节初始值
         left_init = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, -np.pi])
         right_init = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, np.pi])
@@ -452,6 +462,42 @@ class EndEffectorCommander(Node):
             self.get_logger().info('收到 /teleop/reset，已重置 Teleop 参考与模型初始位置')
         except Exception as e:
             self.get_logger().error(f'/teleop/reset 重置失败: {e}')
+    
+    # 安全控制：启停与急停
+    def on_enable(self, request: SetBool.Request, response: SetBool.Response):
+        try:
+            if bool(request.data):
+                if self.estop_active:
+                    response.success = False
+                    response.message = '急停未解除，请先调用 /teleop/reset 或清除急停'
+                else:
+                    self.state_enabled = True
+                    response.success = True
+                    response.message = 'Teleop 已启用'
+            else:
+                self.state_enabled = False
+                response.success = True
+                response.message = 'Teleop 已停用'
+        except Exception as e:
+            response.success = False
+            response.message = f'启停处理失败: {e}'
+        self.get_logger().info(response.message)
+        return response
+
+    def on_estop(self, request, response):
+        try:
+            self.estop_active = True
+            self.state_enabled = False
+            response.success = True
+            response.message = '急停已触发：已禁用 Teleop 输出'
+        except Exception as e:
+            response.success = False
+            response.message = f'急停处理失败: {e}'
+        self.get_logger().error(response.message)
+        return response
+
+    def _check_motion_allowed(self) -> bool:
+        return (not self.estop_active) and self.state_enabled
     
     def simple_ik_planar(self, target_x, target_y, target_z, target_rot_z, current_joints, arm='left', interpret_relative=True):
         """
@@ -660,6 +706,9 @@ class EndEffectorCommander(Node):
         if len(msg.data) < 3:
             self.get_logger().warn('接收到的消息数据不足3个元素')
             return
+        # 安全守卫：未启用或急停激活时忽略
+        if not self._check_motion_allowed():
+            return
         
         rel_dx, rel_dz, rel_dyaw = [float(v) for v in msg.data[:3]]
         # 计算与上一帧相对量的增量，避免重复积分导致漂移
@@ -751,6 +800,8 @@ class EndEffectorCommander(Node):
         """处理左臂夹爪命令"""
         if len(msg.data) < 1:
             return
+        if not self._check_motion_allowed():
+            return
         
         gripper_position = msg.data[0]  # 0.0=打开, 1.0=关闭
         # 记录最近一次接收的命令值，供指定日志位置使用
@@ -773,6 +824,8 @@ class EndEffectorCommander(Node):
         """处理右臂夹爪命令"""
         if len(msg.data) < 1:
             return
+        if not self._check_motion_allowed():
+            return
         
         gripper_position = msg.data[0]  # 0.0=打开, 1.0=关闭（反转以符合期望）
         # 记录最近一次接收的命令值
@@ -791,6 +844,8 @@ class EndEffectorCommander(Node):
     def right_ee_callback(self, msg):
         """处理右臂末端执行器目标"""
         if len(msg.data) < 3:
+            return
+        if not self._check_motion_allowed():
             return
         
         rel_dx, rel_dz, rel_dyaw = [float(v) for v in msg.data[:3]]

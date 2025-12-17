@@ -4,7 +4,7 @@
 
 ---
 
-### 安装与构建（集成）
+### 安装与构建
 
 1) 准备 ROS 2 Humble：
 ```bash
@@ -57,7 +57,7 @@ source install/setup.bash
 
 ## 快速开始
 
-在三个终端中分别运行如下命令：
+1) 在三个终端中分别运行如下命令：
 
 - 终端 1：启动模型展示（RViz）
 
@@ -86,33 +86,11 @@ python3 scripts/teleop_endeffector_control.py
 
 三个终端同时运行时，你将可以实现：在摄像头窗口内操作员移动手臂，Rviz中机械臂对应移动。同时通过终端打印信息监控每个映射环节的状态
 
+2) 在 RViz 中手动重置模型位置
+- 画面中有一个红色“Reset”按钮，点击即可重置机械臂模型位置
+
 ---
-## 在 RViz 中手动重置
-
-- 启动重置按钮节点：
-
-```bash
-cd /home/cnbot/Teleoperation_Challenge
-python3 scripts/rviz_reset_button.py
-```
-
-- 在 RViz 中添加显示：
-   - 添加一个 `InteractiveMarkers` 显示
-   - 将 `Update Topic` 设置为 `/teleop_reset/update`
-   - 画面中会出现一个红色“Reset”按钮，点击即可重置
-
-- 也可以通过命令行重置：
-
-```bash
-# 调用服务方式
-ros2 service call /teleop/reset_reference std_srvs/srv/Trigger {}
-
-# 或通过话题触发
-ros2 topic pub -1 /teleop/reset std_msgs/msg/Empty {}
-```
-
-说明：RViz 自带的 'r' 键仅重置“视角”，不会影响机器人状态；本方案将“重置参考与模型初始位置”做成 ROS 接口与 RViz 按钮，避免频繁重启。
-
+   
 ## 项目结构（简要）
 
 - `scripts/`

@@ -40,7 +40,7 @@ class RVizResetButton(Node):
         int_marker.description = ''
         int_marker.scale = max(0.1, bsize)
         int_marker.pose = Pose()
-        int_marker.pose.position.x = 0.4
+        int_marker.pose.position.x = 0.3
         int_marker.pose.position.y = 0.25
         int_marker.pose.position.z = 0.8
 

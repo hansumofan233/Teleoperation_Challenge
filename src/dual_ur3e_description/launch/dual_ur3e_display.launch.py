@@ -26,6 +26,8 @@ def generate_launch_description():
     # 脚本路径（从已安装包定位到工作空间根，再到 scripts/）
     repo_root = os.path.abspath(os.path.join(pkg_dir, '..', '..', '..', '..'))
     reset_button_script = os.path.join(repo_root, 'scripts', 'rviz_reset_button.py')
+    enable_button_script = os.path.join(repo_root, 'scripts', 'rviz_enable_button.py')
+    estop_button_script = os.path.join(repo_root, 'scripts', 'rviz_estop_button.py')
     
     # 初始关节位置
     initial_joint_positions = {
@@ -61,6 +63,16 @@ def generate_launch_description():
             'start_reset_button',
             default_value='true',
             description='Start the RViz reset button helper script'
+        ),
+        DeclareLaunchArgument(
+            'start_enable_button',
+            default_value='true',
+            description='Start the RViz enable/disable button helper script'
+        ),
+        DeclareLaunchArgument(
+            'start_estop_button',
+            default_value='true',
+            description='Start the RViz E-Stop button helper script'
         ),
         
         # Robot State Publisher
@@ -109,5 +121,19 @@ def generate_launch_description():
             cmd=['python3', reset_button_script],
             output='screen',
             condition=IfCondition(LaunchConfiguration('start_reset_button'))
+        ),
+
+        # Enable/Disable 按钮脚本
+        ExecuteProcess(
+            cmd=['python3', enable_button_script],
+            output='screen',
+            condition=IfCondition(LaunchConfiguration('start_enable_button'))
+        ),
+
+        # E-Stop 按钮脚本
+        ExecuteProcess(
+            cmd=['python3', estop_button_script],
+            output='screen',
+            condition=IfCondition(LaunchConfiguration('start_estop_button'))
         )
     ])

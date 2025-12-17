@@ -1,5 +1,6 @@
 /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description//urdf/dual_ur3e.urdf.xacro
 /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description//launch/dual_ur3e_display.launch.py
+/home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description//launch/__pycache__/dual_ur3e_display.launch.cpython-313.pyc
 /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/dual_ur3e_description//config/dual_ur3e.rviz
 /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/ament_index/resource_index/package_run_dependencies/dual_ur3e_description
 /home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description/share/ament_index/resource_index/parent_prefix_path/dual_ur3e_description
