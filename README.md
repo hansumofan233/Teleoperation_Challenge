@@ -78,14 +78,40 @@ python3 scripts/endeffector_commander.py
 ```bash
 python3 scripts/teleop_endeffector_control.py
 ```
-
-运行后，终端会打印：
-- 工作空间范围与控制映射（X/Z/偏航 ←→ 手腕位姿）
-- 手势映射（张开手掌 → 打开夹爪；握拳 → 关闭夹爪）
-- 键盘快捷键：`q` 退出、`r` 重置初始位置、`s` 保存截图
+运行终端3后会打开摄像头窗口，窗口内可显示监测到的手臂及手部骨架，并且同时在终端3打印：
+- 工作空间范围与控制映射：图像中手腕点在图像平面XY位移 → 机械臂XZ位移；Z轴偏航角 → 机械臂手腕旋转角
+  注：第一次出现完整手臂为初始点，位移和角度为相对初始点坐标的变化量
+- 手势映射：张开手掌 → 打开夹爪；握拳 → 关闭夹爪
 - 可见性提示：当人体关键点或手势暂不可见时，保持当前位置不动
 
+三个终端同时运行时，你将可以实现：在摄像头窗口内操作员移动手臂，Rviz中机械臂对应移动。同时通过终端打印信息监控每个映射环节的状态
+
 ---
+## 在 RViz 中手动重置
+
+- 启动重置按钮节点：
+
+```bash
+cd /home/cnbot/Teleoperation_Challenge
+python3 scripts/rviz_reset_button.py
+```
+
+- 在 RViz 中添加显示：
+   - 添加一个 `InteractiveMarkers` 显示
+   - 将 `Update Topic` 设置为 `/teleop_reset/update`
+   - 画面中会出现一个红色“Reset”按钮，点击即可重置
+
+- 也可以通过命令行重置：
+
+```bash
+# 调用服务方式
+ros2 service call /teleop/reset_reference std_srvs/srv/Trigger {}
+
+# 或通过话题触发
+ros2 topic pub -1 /teleop/reset std_msgs/msg/Empty {}
+```
+
+说明：RViz 自带的 'r' 键仅重置“视角”，不会影响机器人状态；本方案将“重置参考与模型初始位置”做成 ROS 接口与 RViz 按钮，避免频繁重启。
 
 ## 项目结构（简要）
 

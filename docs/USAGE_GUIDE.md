@@ -5,7 +5,7 @@
 ✅ **无需校准** - 手臂自然下垂即可开始操作  
 ✅ **3D位置控制** - X(前后), Y(左右), Z(上下)  
 ✅ **手势识别** - 张开手掌=开夹爪，握拳=关夹爪  
-✅ **一键重置** - 随时按'r'键重置到初始位置  
+✅ **一键重置** - RViz 按钮或服务/话题触发  
 ✅ **噪声过滤** - 自动平滑和手势稳定化  
 ✅ **独立控制** - 左手控制左臂，右手控制右臂  
 
@@ -53,8 +53,8 @@ python3 scripts/teleop_endeffector_control.py
 ### 键盘控制
 
 - **q** - 退出程序
-- **r** - 重置机械臂到初始位置（左臂：0.6, 0.3, 0.7；右臂：0.6, -0.3, 0.7）
 - **s** - 保存当前画面截图
+- 重置请使用 RViz Reset 按钮或 `ros2 service`/`ros2 topic`（见下文）
 
 ## 工作空间范围
 
@@ -86,14 +86,14 @@ python3 scripts/teleop_endeffector_control.py
 
 ### 5. 重置功能 ⭐ 新功能
 - **何时使用**: 当机械臂移动到不便观察的位置时
-- **如何使用**: 按键盘上的 **'r'** 键
+- **如何使用**: 点击 RViz 中的 Reset 按钮，或调用服务/话题（见下文）
 - **效果**: 
-  - 双臂立即返回初始位置
-  - 夹爪自动打开
-  - 清空所有状态缓冲
+   - 双臂立即返回初始位置
+   - 夹爪自动打开
+   - 清空所有状态缓冲（包括摄像头参考锚点）
 - **初始位置**:
-  - 左臂: X=0.6m, Y=0.3m, Z=0.7m
-  - 右臂: X=0.6m, Y=-0.3m, Z=0.7m
+   - 左臂: X=0.6m, Y=0.3m, Z=0.7m
+   - 右臂: X=0.6m, Y=-0.3m, Z=0.7m
 
 ## 典型应用场景
 
@@ -118,7 +118,7 @@ python3 scripts/teleop_endeffector_control.py
 ### 场景2: 从异常位置恢复
 ```
 1. 机械臂移动到不便观察的位置
-   → 按 'r' 键
+   → 点击 RViz 中的 Reset 按钮（或调用服务）
 
 2. 双臂自动返回初始位置
    → 重新开始控制
@@ -150,7 +150,7 @@ python3 scripts/teleop_endeffector_control.py
 - 检查是否所有三个程序都在运行
 - 确认手臂在摄像头视野内
 - 查看终端是否有错误信息
-- **尝试按 'r' 键重置**
+- **使用 RViz Reset 按钮重置**
 
 ### 问题2: 手势识别不响应
 - 确保手掌完全张开或完全握拳
@@ -166,7 +166,7 @@ python3 scripts/teleop_endeffector_control.py
 - 系统会自动平滑，保持稳定约1秒
 
 ### 问题5: 机械臂位置不对劲
-- **立即按 'r' 键重置到安全位置**
+- **使用 RViz Reset 按钮重置到安全位置**
 - 重新开始控制
 - 如果问题持续，检查工作空间参数
 
@@ -176,7 +176,7 @@ python3 scripts/teleop_endeffector_control.py
 1. 系统有工作空间限制，防止机械臂与基座碰撞
 2. 首次使用时建议从小幅度动作开始
 3. 观察RViz中的机械臂位置，确保安全
-4. **遇到异常立即按 'r' 键重置**
+4. **遇到异常请使用 RViz Reset 按钮重置**
 5. 紧急情况下按 'q' 键退出
 
 ## 技术参数
@@ -204,9 +204,10 @@ python3 scripts/teleop_endeffector_control.py
 
 | 按键 | 功能 | 说明 |
 |-----|------|------|
-| **r** | 重置到初始位置 | ⭐ 推荐：位置异常时使用 |
 | **q** | 退出程序 | 完全停止所有控制 |
 | **s** | 保存截图 | 保存当前摄像头画面 |
+
+提示：重置请使用 RViz Reset 按钮或服务/话题（见下文）。
 
 ## 自定义配置
 
@@ -241,3 +242,29 @@ self.gesture_buffer_size = 5
 - [ ] 记录和回放运动轨迹
 - [ ] 多个预设位置快捷键（数字键1-9）
 - [ ] 添加慢速模式（精细操作）
+
+## 在 RViz 中手动重置（无需重启）
+
+- 启动重置按钮节点：
+
+```bash
+cd /home/cnbot/Teleoperation_Challenge
+python3 scripts/rviz_reset_button.py
+```
+
+- 在 RViz 中添加显示：
+   - 添加一个 `InteractiveMarkers` 显示
+   - 将 `Update Topic` 设置为 `/teleop_reset/update`
+   - 画面中会出现一个红色“Reset”按钮，点击即可重置
+
+- 也可以通过命令行重置：
+
+```bash
+# 调用服务方式
+ros2 service call /teleop/reset_reference std_srvs/srv/Trigger {}
+
+# 或通过话题触发
+ros2 topic pub -1 /teleop/reset std_msgs/msg/Empty {}
+```
+
+说明：RViz 自带的 'r' 键仅重置“视角”，不会影响机器人状态；之前摄像头程序里的 'r' 键重置，需要摄像头窗口获得焦点才会生效。本方案将“重置参考与模型初始位置”做成 ROS 接口与 RViz 按钮，避免频繁重启。

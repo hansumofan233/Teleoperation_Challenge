@@ -8,6 +8,8 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, Header
+from std_msgs.msg import Empty
+from std_srvs.srv import Trigger
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 from builtin_interfaces.msg import Duration
@@ -345,6 +347,10 @@ class EndEffectorCommander(Node):
         }
 
         self.get_logger().info('末端执行器命令转换节点已启动')
+
+        # 重置参考/姿态：服务与话题
+        self.reset_srv = self.create_service(Trigger, '/teleop/reset_reference', self.on_reset_reference)
+        self.reset_sub = self.create_subscription(Empty, '/teleop/reset', self.on_reset_reference_msg, 10)
     
     def world_to_base_frame(self, world_x, world_y, world_z, base_pos):
         """
@@ -370,6 +376,82 @@ class EndEffectorCommander(Node):
         base_z = rel_z
         
         return base_x, base_y, base_z
+
+    def reset_internal_state(self):
+        """
+        重置模型初始位置/参考：
+        - 将左右臂当前关节状态设为初始默认值
+        - 重置左右末端绝对目标与相对增量
+        - 立即发布一次完整关节状态，便于 RViz 同步
+        """
+        # 关节初始值
+        left_init = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, -np.pi])
+        right_init = np.array([0.0, 0.0, 0.0, -1.5708, 0.0, np.pi])
+
+        self.left_current_joints = left_init.copy()
+        self.right_current_joints = right_init.copy()
+
+        # 以初始关节计算对应的 X-Z-Yaw 作为新的绝对目标
+        def _fk_xzyaw(j):
+            q1, q2, q3, q4, q5, q6 = j
+            x = (self.a2 * np.cos(q2) + self.a3 * np.cos(q2 + q3))
+            z = self.d1 + self.a2 * np.sin(q2) + self.a3 * np.sin(q2 + q3)
+            yaw = q4
+            return float(x), float(z), float(yaw)
+
+        lx, lz, lyaw = _fk_xzyaw(self.left_current_joints)
+        rx, rz, ryaw = _fk_xzyaw(self.right_current_joints)
+
+        self.left_goal = {
+            'x': np.clip(lx, self.x_min, self.x_max),
+            'z': np.clip(lz, self.z_min, self.z_max),
+            'yaw': lyaw,
+            'last_rel': np.array([0.0, 0.0, 0.0], dtype=float)
+        }
+        self.right_goal = {
+            'x': np.clip(rx, self.x_min, self.x_max),
+            'z': np.clip(rz, self.z_min, self.z_max),
+            'yaw': ryaw,
+            'last_rel': np.array([0.0, 0.0, 0.0], dtype=float)
+        }
+
+        # 更新 all_joint_positions（含夹爪保持不变）
+        self.all_joint_positions.update({
+            'left_shoulder_pan_joint': float(self.left_current_joints[0]),
+            'left_shoulder_lift_joint': float(self.left_current_joints[1]),
+            'left_elbow_joint': float(self.left_current_joints[2]),
+            'left_wrist_1_joint': float(self.left_current_joints[3]),
+            'left_wrist_2_joint': float(self.left_current_joints[4]),
+            'left_wrist_3_joint': float(self.left_current_joints[5]),
+            'right_shoulder_pan_joint': float(self.right_current_joints[0]),
+            'right_shoulder_lift_joint': float(self.right_current_joints[1]),
+            'right_elbow_joint': float(self.right_current_joints[2]),
+            'right_wrist_1_joint': float(self.right_current_joints[3]),
+            'right_wrist_2_joint': float(self.right_current_joints[4]),
+            'right_wrist_3_joint': float(self.right_current_joints[5]),
+        })
+
+        # 立即发布一次关节状态，使 RViz 模型回到初始位姿
+        self.publish_complete_joint_state()
+
+    def on_reset_reference(self, request, response):
+        try:
+            self.reset_internal_state()
+            response.success = True
+            response.message = '已重置 Teleop 参考与模型初始位置'
+        except Exception as e:
+            response.success = False
+            response.message = f'重置失败: {e}'
+        self.get_logger().info(response.message)
+        return response
+
+    def on_reset_reference_msg(self, _msg: Empty):
+        # 通过话题触发与服务同样的逻辑
+        try:
+            self.reset_internal_state()
+            self.get_logger().info('收到 /teleop/reset，已重置 Teleop 参考与模型初始位置')
+        except Exception as e:
+            self.get_logger().error(f'/teleop/reset 重置失败: {e}')
     
     def simple_ik_planar(self, target_x, target_y, target_z, target_rot_z, current_joints, arm='left', interpret_relative=True):
         """

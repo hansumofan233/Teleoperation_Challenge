@@ -9,6 +9,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Pose, Point, Quaternion
 from std_msgs.msg import Float64MultiArray, Header
+from std_msgs.msg import Empty
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -206,7 +207,9 @@ class TeleopEndEffectorControl(Node):
         self.get_logger().info('手势控制:')
         self.get_logger().info('  - 张开手掌 → 打开夹爪')
         self.get_logger().info('  - 握拳 → 关闭夹爪')
-        self.get_logger().info('按键: q-退出 | r-重置到初始位置 | s-保存截图')
+        # 订阅统一的重置话题（由 RViz 按钮/服务触发）
+        self.reset_sub = self.create_subscription(Empty, '/teleop/reset', self.on_reset_msg, 10)
+        self.get_logger().info('重置方式: 使用 RViz Reset 按钮或发布 /teleop/reset')
         if self.debug_seq_enable:
             self.get_logger().info(f'调试序号开启：每 {self.debug_log_every_n} 帧打印一次（基于 seq）')
         else:
@@ -293,6 +296,11 @@ class TeleopEndEffectorControl(Node):
         self.gesture_buffer['right'].clear()
         
         self.get_logger().info('✅ 已重置到初始位置: 左臂(0.6, 0.3, 0.7), 右臂(0.6, -0.3, 0.7)')
+
+    def on_reset_msg(self, _msg: Empty):
+        """接收统一重置信号，清空锚点/相对并回到初始位姿"""
+        self.get_logger().info('收到 /teleop/reset，重置视觉参考与目标基线')
+        self.reset_to_initial_position()
 
     def estimate_wrist_yaw(self, hand_landmarks):
         """根据手部关键点估计手腕绕垂直轴的偏航角(弧度)，精度可较低，附带去噪"""
@@ -625,7 +633,7 @@ class TeleopEndEffectorControl(Node):
         info_y += 25
         
         # 控制说明
-        cv2.putText(image, "q:Quit | r:Reset to Initial | s:Save | Open Palm=Open | Fist=Close", 
+        cv2.putText(image, "q:Quit | s:Save | Reset via RViz button | Open Palm=Open | Fist=Close", 
                    (10, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
         return image
@@ -767,9 +775,7 @@ class TeleopEndEffectorControl(Node):
         if key == ord('q'):
             self.get_logger().info('退出程序')
             rclpy.shutdown()
-        elif key == ord('r'):
-            # 重置到初始位置
-            self.reset_to_initial_position()
+        # 'r' 键重置已移除，统一通过 RViz 按钮/话题/服务触发
         elif key == ord('s'):
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             filename = f"teleop_capture_{timestamp}.jpg"
