@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-快速测试脚本 - 验证新的遥操作系统
-测试手势识别和3D位置控制
+Quick test script - verify the new teleoperation system
+Test gesture recognition and 3D position control
 """
 
 import cv2
@@ -9,12 +9,12 @@ import mediapipe as mp
 import numpy as np
 
 def test_hand_gesture_recognition():
-    """测试手势识别功能"""
-    print("=== 手势识别测试 ===")
-    print("1. 打开摄像头")
-    print("2. 张开手掌 → 应显示 'OPEN'")
-    print("3. 握拳 → 应显示 'CLOSED'")
-    print("按 'q' 退出测试\n")
+    """Test gesture recognition"""
+    print("=== Gesture Recognition Test ===")
+    print("1. Open the camera")
+    print("2. Open palm → should show 'OPEN'")
+    print("3. Closed fist → should show 'CLOSED'")
+    print("Press 'q' to quit\n")
     
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands(
@@ -28,7 +28,7 @@ def test_hand_gesture_recognition():
     cap = cv2.VideoCapture(0)
     
     def recognize_gesture(hand_landmarks):
-        """识别手势"""
+        """Recognize gesture"""
         landmarks = hand_landmarks.landmark
         palm_center = landmarks[0]
         
@@ -56,7 +56,7 @@ def test_hand_gesture_recognition():
     while cap.isOpened():
         success, image = cap.read()
         if not success:
-            print("警告: 无法读取摄像头画面")
+            print("Warning: cannot read camera frame")
             break
         
         image = cv2.flip(image, 1)
@@ -88,14 +88,14 @@ def test_hand_gesture_recognition():
     
     cap.release()
     cv2.destroyAllWindows()
-    print("✅ 手势识别测试完成\n")
+    print("✅ Gesture recognition test complete\n")
 
 
 def test_arm_position_mapping():
-    """测试手臂位置映射"""
-    print("=== 手臂位置映射测试 ===")
-    print("显示手腕位置映射到机械臂工作空间的坐标")
-    print("按 'q' 退出测试\n")
+    """Test arm position mapping"""
+    print("=== Arm Position Mapping Test ===")
+    print("Display wrist-to-workspace coordinate mapping")
+    print("Press 'q' to quit\n")
     
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose(
@@ -108,17 +108,17 @@ def test_arm_position_mapping():
     
     cap = cv2.VideoCapture(0)
     
-    # 工作空间参数
+    # Define workspace boundaries
     workspace_x_min, workspace_x_max = 0.3, 0.9
     workspace_y_min, workspace_y_max = -0.4, 0.4
     workspace_z_min, workspace_z_max = 0.5, 1.2
     
     def calculate_robot_position(wrist, shoulder):
-        """计算机器人位置"""
+        """Compute robot position"""
         relative = wrist - shoulder
         
         x = np.interp(-relative[2], [-0.5, 0.3], [workspace_x_min, workspace_x_max])
-        y = np.interp(relative[0], [-0.2, 0.5], [workspace_y_min, workspace_y_max])
+            # Workspace parameters
         z = np.interp(1.0 - wrist[1], [0.3, 0.9], [workspace_z_min, workspace_z_max])
         
         x = np.clip(x, workspace_x_min, workspace_x_max)
@@ -130,7 +130,7 @@ def test_arm_position_mapping():
     while cap.isOpened():
         success, image = cap.read()
         if not success:
-            print("警告: 无法读取摄像头画面")
+            print("Warning: cannot read camera frame")
             break
         
         image = cv2.flip(image, 1)
@@ -144,7 +144,7 @@ def test_arm_position_mapping():
             
             landmarks = results.pose_landmarks.landmark
             
-            # 左臂
+            # left arm
             left_shoulder = np.array([landmarks[11].x, landmarks[11].y, landmarks[11].z])
             left_wrist = np.array([landmarks[15].x, landmarks[15].y, landmarks[15].z])
             
@@ -153,9 +153,9 @@ def test_arm_position_mapping():
                 cv2.putText(image, f"Left: X={lx:.2f} Y={ly:.2f} Z={lz:.2f}",
                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
             
-            # 右臂
+            # right arm
             right_shoulder = np.array([landmarks[12].x, landmarks[12].y, landmarks[12].z])
-            right_wrist = np.array([landmarks[16].x, landmarks[16].y, landmarks[16].z])
+                    # Left arm
             
             if landmarks[16].visibility > 0.5:
                 rx, ry, rz = calculate_robot_position(right_wrist, right_shoulder)
@@ -165,27 +165,27 @@ def test_arm_position_mapping():
         cv2.putText(image, "Press 'q' to quit", (10, h - 20),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
-        cv2.imshow('Position Mapping Test', image)
+                    # Right arm
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     
     cap.release()
     cv2.destroyAllWindows()
-    print("✅ 位置映射测试完成\n")
+    print("✅ Position mapping test complete\n")
 
 
 def main():
     print("\n" + "="*50)
-    print("  遥操作系统功能测试")
+    print("  Teleoperation System Functional Tests")
     print("="*50 + "\n")
     
-    print("选择测试:")
-    print("1. 手势识别测试")
-    print("2. 位置映射测试")
-    print("3. 全部测试")
+    print("Select a test:")
+    print("1. Gesture recognition test")
+    print("2. Position mapping test")
+    print("3. Run all tests")
     
-    choice = input("\n请输入选择 (1/2/3): ").strip()
+    choice = input("\nEnter choice (1/2/3): ").strip()
     
     if choice == '1':
         test_hand_gesture_recognition()
@@ -195,10 +195,10 @@ def main():
         test_hand_gesture_recognition()
         test_arm_position_mapping()
     else:
-        print("无效选择")
+        print("Invalid choice")
     
     print("\n" + "="*50)
-    print("  测试完成!")
+    print("  Tests complete!")
     print("="*50 + "\n")
 
 

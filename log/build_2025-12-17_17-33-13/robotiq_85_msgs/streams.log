@@ -1,0 +1,318 @@
+[0.018s] Invoking command in '/home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver:/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake /home/cnbot/Teleoperation_Challenge/src/robotiq_85_gripper/robotiq_85_msgs -DCMAKE_INSTALL_PREFIX=/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs
+[0.070s] -- The C compiler identification is GNU 11.4.0
+[0.120s] -- The CXX compiler identification is GNU 11.4.0
+[0.126s] -- Detecting C compiler ABI info
+[0.172s] -- Detecting C compiler ABI info - done
+[0.172s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.172s] -- Detecting C compile features
+[0.172s] -- Detecting C compile features - done
+[0.178s] -- Detecting CXX compiler ABI info
+[0.223s] -- Detecting CXX compiler ABI info - done
+[0.223s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.223s] -- Detecting CXX compile features
+[0.223s] -- Detecting CXX compile features - done
+[0.226s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.409s] -- Found Python3: /home/cnbot/miniconda3/envs/env_6dofarms/bin/python3 (found version "3.10.19") found components: Interpreter 
+[0.463s] -- Found builtin_interfaces: 1.2.2 (/opt/ros/humble/share/builtin_interfaces/cmake)
+[0.488s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.492s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.499s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.509s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.517s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.525s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[0.531s] -- Found std_msgs: 4.9.0 (/opt/ros/humble/share/std_msgs/cmake)
+[0.703s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[0.900s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.971s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.982s] -- Found PythonInterp: /home/cnbot/miniconda3/envs/env_6dofarms/bin/python3 (found suitable version "3.10.19", minimum required is "3.6") 
+[0.983s] -- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+[0.996s] -- Found PythonLibs: /home/cnbot/miniconda3/envs/env_6dofarms/lib/libpython3.10.so (found suitable version "3.10.19", minimum required is "3.5") 
+[0.996s] -- Using PYTHON_EXECUTABLE: /home/cnbot/miniconda3/envs/env_6dofarms/bin/python3
+[0.996s] -- Using PYTHON_INCLUDE_DIRS: /home/cnbot/miniconda3/envs/env_6dofarms/include/python3.10
+[0.996s] -- Using PYTHON_LIBRARIES: /home/cnbot/miniconda3/envs/env_6dofarms/lib/libpython3.10.so
+[1.005s] -- Found PythonExtra: .so  
+[1.108s] -- Using numpy include directory: /home/cnbot/miniconda3/envs/env_6dofarms/lib/python3.10/site-packages/numpy/_core/include
+[1.121s] -- Configuring done
+[1.129s] [33mCMake Warning at /opt/ros/humble/share/rosidl_generator_py/cmake/rosidl_generator_py_generate_interfaces.cmake:166 (add_library):
+[1.129s]   Cannot generate a safe runtime search path for target
+[1.129s]   robotiq_85_msgs__rosidl_generator_py because files in some directories may
+[1.129s]   conflict with libraries in implicit directories:
+[1.129s] 
+[1.129s]     runtime library [libpython3.10.so.1.0] in /usr/lib/x86_64-linux-gnu may be hidden by files in:
+[1.129s]       /home/cnbot/miniconda3/envs/env_6dofarms/lib
+[1.129s] 
+[1.129s]   Some of these libraries may not be found correctly.
+[1.129s] Call Stack (most recent call first):
+[1.129s]   /opt/ros/humble/share/ament_cmake_core/cmake/core/ament_execute_extensions.cmake:48 (include)
+[1.129s]   /opt/ros/humble/share/rosidl_cmake/cmake/rosidl_generate_interfaces.cmake:286 (ament_execute_extensions)
+[1.129s]   CMakeLists.txt:14 (rosidl_generate_interfaces)
+[1.129s] 
+[1.129s] [0m
+[1.130s] [33mCMake Warning at /opt/ros/humble/share/rosidl_generator_py/cmake/rosidl_generator_py_generate_interfaces.cmake:226 (add_library):
+[1.130s]   Cannot generate a safe runtime search path for target
+[1.130s]   robotiq_85_msgs__rosidl_typesupport_fastrtps_c__pyext because files in some
+[1.130s]   directories may conflict with libraries in implicit directories:
+[1.130s] 
+[1.130s]     runtime library [libpython3.10.so.1.0] in /usr/lib/x86_64-linux-gnu may be hidden by files in:
+[1.130s]       /home/cnbot/miniconda3/envs/env_6dofarms/lib
+[1.130s] 
+[1.130s]   Some of these libraries may not be found correctly.
+[1.130s] Call Stack (most recent call first):
+[1.130s]   /opt/ros/humble/share/ament_cmake_core/cmake/core/ament_execute_extensions.cmake:48 (include)
+[1.130s]   /opt/ros/humble/share/rosidl_cmake/cmake/rosidl_generate_interfaces.cmake:286 (ament_execute_extensions)
+[1.130s]   CMakeLists.txt:14 (rosidl_generate_interfaces)
+[1.130s] 
+[1.130s] [0m
+[1.131s] [33mCMake Warning at /opt/ros/humble/share/rosidl_generator_py/cmake/rosidl_generator_py_generate_interfaces.cmake:226 (add_library):
+[1.131s]   Cannot generate a safe runtime search path for target
+[1.131s]   robotiq_85_msgs__rosidl_typesupport_introspection_c__pyext because files in
+[1.131s]   some directories may conflict with libraries in implicit directories:
+[1.131s] 
+[1.131s]     runtime library [libpython3.10.so.1.0] in /usr/lib/x86_64-linux-gnu may be hidden by files in:
+[1.131s]       /home/cnbot/miniconda3/envs/env_6dofarms/lib
+[1.131s] 
+[1.131s]   Some of these libraries may not be found correctly.
+[1.131s] Call Stack (most recent call first):
+[1.131s]   /opt/ros/humble/share/ament_cmake_core/cmake/core/ament_execute_extensions.cmake:48 (include)
+[1.131s]   /opt/ros/humble/share/rosidl_cmake/cmake/rosidl_generate_interfaces.cmake:286 (ament_execute_extensions)
+[1.131s]   CMakeLists.txt:14 (rosidl_generate_interfaces)
+[1.131s] 
+[1.131s] [0m
+[1.132s] [33mCMake Warning at /opt/ros/humble/share/rosidl_generator_py/cmake/rosidl_generator_py_generate_interfaces.cmake:226 (add_library):
+[1.132s]   Cannot generate a safe runtime search path for target
+[1.132s]   robotiq_85_msgs__rosidl_typesupport_c__pyext because files in some
+[1.132s]   directories may conflict with libraries in implicit directories:
+[1.132s] 
+[1.132s]     runtime library [libpython3.10.so.1.0] in /usr/lib/x86_64-linux-gnu may be hidden by files in:
+[1.132s]       /home/cnbot/miniconda3/envs/env_6dofarms/lib
+[1.132s] 
+[1.132s]   Some of these libraries may not be found correctly.
+[1.132s] Call Stack (most recent call first):
+[1.132s]   /opt/ros/humble/share/ament_cmake_core/cmake/core/ament_execute_extensions.cmake:48 (include)
+[1.132s]   /opt/ros/humble/share/rosidl_cmake/cmake/rosidl_generate_interfaces.cmake:286 (ament_execute_extensions)
+[1.132s]   CMakeLists.txt:14 (rosidl_generate_interfaces)
+[1.132s] 
+[1.132s] [0m
+[1.133s] -- Generating done
+[1.138s] -- Build files have been written to: /home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs
+[1.143s] Invoked command in '/home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver:/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake /home/cnbot/Teleoperation_Challenge/src/robotiq_85_gripper/robotiq_85_msgs -DCMAKE_INSTALL_PREFIX=/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs
+[1.144s] Invoking command in '/home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver:/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake --build /home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs -- -j24 -l24
+[1.165s] [  2%] [34m[1mGenerating C code for ROS interfaces[0m
+[1.171s] [  5%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[1.177s] [  5%] Built target ament_cmake_python_copy_robotiq_85_msgs
+[1.265s] running egg_info
+[1.269s] creating robotiq_85_msgs.egg-info
+[1.269s] writing robotiq_85_msgs.egg-info/PKG-INFO
+[1.269s] writing dependency_links to robotiq_85_msgs.egg-info/dependency_links.txt
+[1.269s] writing top-level names to robotiq_85_msgs.egg-info/top_level.txt
+[1.269s] writing manifest file 'robotiq_85_msgs.egg-info/SOURCES.txt'
+[1.281s] reading manifest file 'robotiq_85_msgs.egg-info/SOURCES.txt'
+[1.281s] writing manifest file 'robotiq_85_msgs.egg-info/SOURCES.txt'
+[1.299s] [  5%] Built target ament_cmake_python_build_robotiq_85_msgs_egg
+[1.314s] [  5%] Built target robotiq_85_msgs__cpp
+[1.316s] [ 10%] [32mBuilding C object CMakeFiles/robotiq_85_msgs__rosidl_generator_c.dir/rosidl_generator_c/robotiq_85_msgs/msg/detail/gripper_stat__functions.c.o[0m
+[1.316s] [ 10%] [32mBuilding C object CMakeFiles/robotiq_85_msgs__rosidl_generator_c.dir/rosidl_generator_c/robotiq_85_msgs/msg/detail/gripper_cmd__functions.c.o[0m
+[1.320s] [ 12%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
+[1.325s] [ 15%] [34m[1mGenerating C++ type support for eProsima Fast-RTPS[0m
+[1.325s] [ 17%] [34m[1mGenerating C++ type support dispatch for ROS interfaces[0m
+[1.359s] [ 20%] [32m[1mLinking C shared library librobotiq_85_msgs__rosidl_generator_c.so[0m
+[1.378s] [ 20%] Built target robotiq_85_msgs__rosidl_generator_c
+[1.384s] [ 23%] [34m[1mGenerating C type support for eProsima Fast-RTPS[0m
+[1.384s] [ 25%] [34m[1mGenerating C introspection for ROS interfaces[0m
+[1.388s] [ 28%] [34m[1mGenerating C type support dispatch for ROS interfaces[0m
+[1.447s] [ 33%] [32mBuilding CXX object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/robotiq_85_msgs/msg/gripper_cmd__type_support.cpp.o[0m
+[1.447s] [ 33%] [32mBuilding CXX object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/robotiq_85_msgs/msg/gripper_stat__type_support.cpp.o[0m
+[1.462s] [ 35%] [32mBuilding CXX object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/robotiq_85_msgs/msg/detail/gripper_cmd__type_support.cpp.o[0m
+[1.464s] [ 38%] [32mBuilding CXX object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/robotiq_85_msgs/msg/detail/gripper_stat__type_support.cpp.o[0m
+[1.470s] [ 41%] [32mBuilding CXX object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/robotiq_85_msgs/msg/detail/dds_fastrtps/gripper_stat__type_support.cpp.o[0m
+[1.471s] [ 43%] [32mBuilding CXX object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/robotiq_85_msgs/msg/detail/dds_fastrtps/gripper_cmd__type_support.cpp.o[0m
+[1.512s] [ 46%] [32mBuilding CXX object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/robotiq_85_msgs/msg/gripper_cmd__type_support.cpp.o[0m
+[1.512s] [ 48%] [32mBuilding CXX object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/robotiq_85_msgs/msg/gripper_stat__type_support.cpp.o[0m
+[1.517s] [ 51%] [32mBuilding CXX object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/robotiq_85_msgs/msg/detail/gripper_cmd__type_support_c.cpp.o[0m
+[1.518s] [ 53%] [32mBuilding C object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/robotiq_85_msgs/msg/detail/gripper_cmd__type_support.c.o[0m
+[1.518s] [ 56%] [32mBuilding C object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/robotiq_85_msgs/msg/detail/gripper_stat__type_support.c.o[0m
+[1.519s] [ 58%] [32mBuilding CXX object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/robotiq_85_msgs/msg/detail/gripper_stat__type_support_c.cpp.o[0m
+[1.532s] [ 61%] [32m[1mLinking CXX shared library librobotiq_85_msgs__rosidl_typesupport_c.so[0m
+[1.538s] [ 64%] [32m[1mLinking C shared library librobotiq_85_msgs__rosidl_typesupport_introspection_c.so[0m
+[1.567s] [ 64%] Built target robotiq_85_msgs__rosidl_typesupport_c
+[1.579s] [ 64%] Built target robotiq_85_msgs__rosidl_typesupport_introspection_c
+[1.598s] [ 66%] [32m[1mLinking CXX shared library librobotiq_85_msgs__rosidl_typesupport_cpp.so[0m
+[1.628s] [ 66%] Built target robotiq_85_msgs__rosidl_typesupport_cpp
+[1.657s] [ 69%] [32m[1mLinking CXX shared library librobotiq_85_msgs__rosidl_typesupport_introspection_cpp.so[0m
+[1.665s] [ 71%] [32m[1mLinking CXX shared library librobotiq_85_msgs__rosidl_typesupport_fastrtps_c.so[0m
+[1.671s] [ 74%] [32m[1mLinking CXX shared library librobotiq_85_msgs__rosidl_typesupport_fastrtps_cpp.so[0m
+[1.692s] [ 74%] Built target robotiq_85_msgs__rosidl_typesupport_introspection_cpp
+[1.711s] [ 74%] Built target robotiq_85_msgs__rosidl_typesupport_fastrtps_c
+[1.712s] [ 74%] Built target robotiq_85_msgs__rosidl_typesupport_fastrtps_cpp
+[1.721s] [ 74%] Built target robotiq_85_msgs
+[1.732s] [ 76%] [34m[1mGenerating Python code for ROS interfaces[0m
+[1.914s] [ 76%] Built target robotiq_85_msgs__py
+[1.931s] [ 82%] [32mBuilding C object CMakeFiles/robotiq_85_msgs__rosidl_generator_py.dir/rosidl_generator_py/robotiq_85_msgs/msg/_gripper_cmd_s.c.o[0m
+[1.931s] [ 82%] [32mBuilding C object CMakeFiles/robotiq_85_msgs__rosidl_generator_py.dir/rosidl_generator_py/robotiq_85_msgs/msg/_gripper_stat_s.c.o[0m
+[2.021s] [ 84%] [32m[1mLinking C shared library rosidl_generator_py/robotiq_85_msgs/librobotiq_85_msgs__rosidl_generator_py.so[0m
+[2.045s] [ 84%] Built target robotiq_85_msgs__rosidl_generator_py
+[2.056s] [ 87%] [32mBuilding C object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_c__pyext.dir/rosidl_generator_py/robotiq_85_msgs/_robotiq_85_msgs_s.ep.rosidl_typesupport_c.c.o[0m
+[2.061s] [ 89%] [32mBuilding C object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_introspection_c__pyext.dir/rosidl_generator_py/robotiq_85_msgs/_robotiq_85_msgs_s.ep.rosidl_typesupport_introspection_c.c.o[0m
+[2.061s] [ 92%] [32mBuilding C object CMakeFiles/robotiq_85_msgs__rosidl_typesupport_fastrtps_c__pyext.dir/rosidl_generator_py/robotiq_85_msgs/_robotiq_85_msgs_s.ep.rosidl_typesupport_fastrtps_c.c.o[0m
+[2.110s] [ 94%] [32m[1mLinking C shared library rosidl_generator_py/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so[0m
+[2.117s] [ 97%] [32m[1mLinking C shared library rosidl_generator_py/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so[0m
+[2.118s] [100%] [32m[1mLinking C shared library rosidl_generator_py/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so[0m
+[2.139s] [100%] Built target robotiq_85_msgs__rosidl_typesupport_introspection_c__pyext
+[2.143s] [100%] Built target robotiq_85_msgs__rosidl_typesupport_fastrtps_c__pyext
+[2.150s] [100%] Built target robotiq_85_msgs__rosidl_typesupport_c__pyext
+[2.162s] Invoked command in '/home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver:/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake --build /home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs -- -j24 -l24
+[2.162s] Invoking command in '/home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver:/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake --install /home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs
+[2.164s] -- Install configuration: ""
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/ament_index/resource_index/rosidl_interfaces/robotiq_85_msgs
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/rosidl_generator_c__visibility_control.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/gripper_cmd.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/gripper_stat.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__functions.c
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__functions.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__type_support.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__functions.c
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__struct.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__struct.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__functions.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__type_support.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/environment/library_path.sh
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/environment/library_path.dsv
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_generator_c.so
+[2.165s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_generator_c.so" to ""
+[2.165s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs
+[2.165s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+[2.165s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__rosidl_typesupport_fastrtps_c.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__rosidl_typesupport_fastrtps_c.h
+[2.165s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_fastrtps_c.so
+[2.165s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_fastrtps_c.so" to ""
+[2.165s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs
+[2.165s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/rosidl_generator_cpp__visibility_control.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/gripper_cmd.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/gripper_stat.hpp
+[2.166s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__traits.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__traits.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__builder.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__builder.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__struct.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__type_support.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__type_support.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__struct.hpp
+[2.166s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs
+[2.166s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+[2.166s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__rosidl_typesupport_fastrtps_cpp.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/dds_fastrtps
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__rosidl_typesupport_fastrtps_cpp.hpp
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_fastrtps_cpp.so
+[2.166s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_fastrtps_cpp.so" to ""
+[2.166s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs
+[2.166s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/rosidl_typesupport_introspection_c__visibility_control.h
+[2.166s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__type_support.c
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__rosidl_typesupport_introspection_c.h
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__rosidl_typesupport_introspection_c.h
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__type_support.c
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_introspection_c.so
+[2.166s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_introspection_c.so" to ""
+[2.166s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_c.so
+[2.167s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_c.so" to ""
+[2.167s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs
+[2.167s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg
+[2.167s] -- Up-to-date: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__rosidl_typesupport_introspection_cpp.hpp
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__rosidl_typesupport_introspection_cpp.hpp
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_stat__type_support.cpp
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/include/robotiq_85_msgs/robotiq_85_msgs/msg/detail/gripper_cmd__type_support.cpp
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_introspection_cpp.so
+[2.167s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_introspection_cpp.so" to ""
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_cpp.so
+[2.167s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_typesupport_cpp.so" to ""
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/environment/pythonpath.sh
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/environment/pythonpath.dsv
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs-1.0.1-py3.10.egg-info
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs-1.0.1-py3.10.egg-info/PKG-INFO
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs-1.0.1-py3.10.egg-info/top_level.txt
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs-1.0.1-py3.10.egg-info/SOURCES.txt
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs-1.0.1-py3.10.egg-info/dependency_links.txt
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/_robotiq_85_msgs_s.ep.rosidl_typesupport_c.c
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/librobotiq_85_msgs__rosidl_generator_py.so
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/__init__.py
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/_robotiq_85_msgs_s.ep.rosidl_typesupport_introspection_c.c
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/_robotiq_85_msgs_s.ep.rosidl_typesupport_fastrtps_c.c
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/msg
+[2.167s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/msg/_gripper_stat.py
+[2.168s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/msg/_gripper_stat_s.c
+[2.168s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/msg/_gripper_cmd_s.c
+[2.168s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/msg/__init__.py
+[2.168s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/msg/_gripper_cmd.py
+[2.187s] Listing '/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs'...
+[2.187s] Compiling '/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/__init__.py'...
+[2.187s] Listing '/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/msg'...
+[2.187s] Compiling '/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/msg/__init__.py'...
+[2.187s] Compiling '/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/msg/_gripper_cmd.py'...
+[2.187s] Compiling '/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/msg/_gripper_stat.py'...
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[2.193s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so" to ""
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[2.193s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so" to ""
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[2.193s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages/robotiq_85_msgs/robotiq_85_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so" to ""
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_generator_py.so
+[2.193s] -- Set runtime path of "/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/librobotiq_85_msgs__rosidl_generator_py.so" to ""
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/msg/GripperCmd.idl
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/msg/GripperStat.idl
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/msg/GripperCmd.msg
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/msg/GripperStat.msg
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/ament_index/resource_index/package_run_dependencies/robotiq_85_msgs
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/ament_index/resource_index/parent_prefix_path/robotiq_85_msgs
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/environment/ament_prefix_path.sh
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/environment/ament_prefix_path.dsv
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/environment/path.sh
+[2.193s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/environment/path.dsv
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/local_setup.bash
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/local_setup.sh
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/local_setup.zsh
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/local_setup.dsv
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/package.dsv
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/ament_index/resource_index/packages/robotiq_85_msgs
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/export_robotiq_85_msgs__rosidl_generator_cExport.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/export_robotiq_85_msgs__rosidl_generator_cExport-noconfig.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/export_robotiq_85_msgs__rosidl_typesupport_fastrtps_cExport.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/export_robotiq_85_msgs__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/export_robotiq_85_msgs__rosidl_generator_cppExport.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/export_robotiq_85_msgs__rosidl_typesupport_fastrtps_cppExport.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/export_robotiq_85_msgs__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/robotiq_85_msgs__rosidl_typesupport_introspection_cExport.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/robotiq_85_msgs__rosidl_typesupport_introspection_cExport-noconfig.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/robotiq_85_msgs__rosidl_typesupport_cExport.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/robotiq_85_msgs__rosidl_typesupport_cExport-noconfig.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/robotiq_85_msgs__rosidl_typesupport_introspection_cppExport.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/robotiq_85_msgs__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/robotiq_85_msgs__rosidl_typesupport_cppExport.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/robotiq_85_msgs__rosidl_typesupport_cppExport-noconfig.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/export_robotiq_85_msgs__rosidl_generator_pyExport.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/export_robotiq_85_msgs__rosidl_generator_pyExport-noconfig.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/rosidl_cmake-extras.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/ament_cmake_export_dependencies-extras.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/ament_cmake_export_include_directories-extras.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/ament_cmake_export_libraries-extras.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/ament_cmake_export_targets-extras.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/robotiq_85_msgsConfig.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/cmake/robotiq_85_msgsConfig-version.cmake
+[2.194s] -- Installing: /home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/share/robotiq_85_msgs/package.xml
+[2.195s] Invoked command in '/home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver:/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake --install /home/cnbot/Teleoperation_Challenge/build/robotiq_85_msgs

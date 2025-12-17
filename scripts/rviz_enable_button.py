@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-RViz 启用/停用 按钮（交互标记）
+RViz Enable/Disable button (Interactive Marker)
 
-在 RViz 中添加 InteractiveMarkers 显示，并将 Update Topic 设置为：/teleop_enable/update
-点击按钮在 启用 与 停用 之间切换，对应调用 /teleop/enable(SetBool)。
-注意：本按钮内部维护本地切换状态，未从服务端读取真实状态，仅用于单独功能验证。
+Add an InteractiveMarkers display in RViz and set Update Topic to: /teleop_enable/update
+Click toggles between Enable and Disable, calling /teleop/enable (SetBool).
+Note: This button keeps local toggle state only; it does not read real server state. Intended for isolated feature validation.
 """
 
 import rclpy
@@ -19,10 +19,10 @@ from geometry_msgs.msg import Pose
 class RVizEnableButton(Node):
     def __init__(self):
         super().__init__('rviz_enable_button')
-        # Interactive Marker Server，命名为 teleop_enable
+        # Interactive Marker Server named teleop_enable
         self.server = InteractiveMarkerServer(self, 'teleop_enable')
 
-        # 参数：允许通过 ROS 参数调节按钮位置与大小
+        # Parameters: tune button position and size via ROS parameters
         self.declare_parameter('button_x', 0.2)
         self.declare_parameter('button_y', 0.5)
         self.declare_parameter('button_z', 0.8)
@@ -32,21 +32,21 @@ class RVizEnableButton(Node):
         self.bz = float(self.get_parameter('button_z').value)
         self.bsize = float(self.get_parameter('button_size').value)
 
-        # 本地启用标志（仅用于切换显示与请求数据）
-        self.enabled = False  # 初始为未启用，第一次点击执行启用
+        # Local enabled flag (for display and requests only)
+        self.enabled = False  # start disabled; first click enables
 
-        # 服务客户端
+        # Service client
         self.cli = self.create_client(SetBool, '/teleop/enable')
 
-        # 创建按钮
+        # Create button
         self._create_or_update_button()
-        self.get_logger().info('RViz Enable/Disable 按钮已创建，RViz里配置 InteractiveMarkers: /teleop_enable/update')
+        self.get_logger().info('RViz Enable/Disable button created. In RViz, configure InteractiveMarkers: /teleop_enable/update')
 
     def _build_marker(self, label: str, color_rgb):
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = 'world'
         int_marker.name = 'enable_button'
-        int_marker.description = ''  # 去掉自带小标签
+        int_marker.description = ''  # remove default label
         int_marker.scale = max(0.1, self.bsize)
         int_marker.pose = Pose()
         int_marker.pose.position.x = 0.8
@@ -82,8 +82,8 @@ class RVizEnableButton(Node):
         return int_marker
 
     def _create_or_update_button(self):
-        # 根据当前状态决定下次动作的标签与颜色
-        # 未启用 -> 显示 Enable（绿色）；已启用 -> 显示 Disable（橙色）
+        # Choose label/color by current state:
+        # disabled -> show Enable (green); enabled -> show Disable (orange)
         if not self.enabled:
             label = 'Enable'
             color = (0.2, 0.8, 0.2)
@@ -93,7 +93,6 @@ class RVizEnableButton(Node):
 
         int_marker = self._build_marker(label, color)
 
-        # 如果已存在则更新
         try:
             self.server.erase(int_marker.name)
         except Exception:
@@ -106,14 +105,14 @@ class RVizEnableButton(Node):
         evt = feedback.event_type
         if evt not in (1, 5):  # BUTTON_CLICK / MOUSE_UP
             return
-        # 启动服务客户端
+        # Start service client
         if not self.cli.service_is_ready():
-            self.get_logger().warn('等待 /teleop/enable 服务就绪...')
+            self.get_logger().warn('Waiting for /teleop/enable service to be ready...')
             if not self.cli.wait_for_service(timeout_sec=2.0):
-                self.get_logger().error('服务未就绪，无法切换启停')
+                self.get_logger().error('Service not ready, cannot toggle enable/disable')
                 return
 
-        # 目标状态：当前未启用->启用(True)，已启用->停用(False)
+        # Target state: disabled -> enable(True), enabled -> disable(False)
         target = not self.enabled
         req = SetBool.Request()
         req.data = bool(target)
@@ -124,14 +123,14 @@ class RVizEnableButton(Node):
         try:
             resp = future.result()
             if resp.success:
-                # 本地状态翻转，并刷新按钮显示
+                # Flip local state and refresh button
                 self.enabled = not self.enabled
                 self._create_or_update_button()
                 self.get_logger().info(resp.message)
             else:
-                self.get_logger().error(f'切换失败: {resp.message}')
+                self.get_logger().error(f'Toggle failed: {resp.message}')
         except Exception as e:
-            self.get_logger().error(f'调用服务异常: {e}')
+            self.get_logger().error(f'Exception calling service: {e}')
 
 
 def main(args=None):

@@ -12,24 +12,24 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     
-    # 获取包路径
+    # Get package path
     pkg_dir = get_package_share_directory('dual_ur3e_description')
     
-    # Launch参数
+    # Launch arguments
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_gui = LaunchConfiguration('use_gui')
     enable_jsp = LaunchConfiguration('enable_jsp')
     
-    # 文件路径
+    # File paths
     urdf_file = os.path.join(pkg_dir, 'urdf', 'dual_ur3e.urdf.xacro')
     rviz_config = os.path.join(pkg_dir, 'config', 'dual_ur3e.rviz')
-    # 脚本路径（从已安装包定位到工作空间根，再到 scripts/）
+    # Script paths (locate workspace root from installed package, then scripts/)
     repo_root = os.path.abspath(os.path.join(pkg_dir, '..', '..', '..', '..'))
     reset_button_script = os.path.join(repo_root, 'scripts', 'rviz_reset_button.py')
     enable_button_script = os.path.join(repo_root, 'scripts', 'rviz_enable_button.py')
     estop_button_script = os.path.join(repo_root, 'scripts', 'rviz_estop_button.py')
     
-    # 初始关节位置
+    # Initial joint positions
     initial_joint_positions = {
         'left_wrist_1_joint': -1.5708,
         'left_wrist_2_joint': 0.0,
@@ -40,7 +40,7 @@ def generate_launch_description():
     }
     
     return LaunchDescription([
-        # Launch参数声明
+        # Launch argument declarations
         DeclareLaunchArgument(
             'use_sim_time',
             default_value='false',
@@ -116,21 +116,21 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}]
         ),
 
-        # Reset 按钮脚本（独立 rclpy 节点）
+        # Reset button script (standalone rclpy node)
         ExecuteProcess(
             cmd=['python3', reset_button_script],
             output='screen',
             condition=IfCondition(LaunchConfiguration('start_reset_button'))
         ),
 
-        # Enable/Disable 按钮脚本
+        # Enable/Disable button script
         ExecuteProcess(
             cmd=['python3', enable_button_script],
             output='screen',
             condition=IfCondition(LaunchConfiguration('start_enable_button'))
         ),
 
-        # E-Stop 按钮脚本
+        # E-Stop button script
         ExecuteProcess(
             cmd=['python3', estop_button_script],
             output='screen',

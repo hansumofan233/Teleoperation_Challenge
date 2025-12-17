@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-MediaPipe姿态检测测试脚本
-专门用于机器人手臂控制的全身姿态检测
+MediaPipe pose detection test script
+Full-body pose detection tailored for robot arm control
 """
 
 import cv2
@@ -12,13 +12,13 @@ import sys
 
 class PoseDetectionTest:
     def __init__(self):
-        print("正在初始化MediaPipe姿态检测...")
+        print("Initializing MediaPipe pose detection...")
         
-        # 初始化MediaPipe姿态检测
+        # Initialize MediaPipe pose detection
         self.mp_pose = mp.solutions.pose
         self.pose = self.mp_pose.Pose(
             static_image_mode=False,
-            model_complexity=1,  # 0=轻量, 1=完整, 2=重型
+            model_complexity=1,  # 0=light, 1=full, 2=heavy
             smooth_landmarks=True,
             enable_segmentation=False,
             min_detection_confidence=0.5,
@@ -26,7 +26,7 @@ class PoseDetectionTest:
         )
         self.mp_draw = mp.solutions.drawing_utils
         
-        # 定义机器人控制相关的关键点
+        # Define keypoints relevant to robot control
         self.arm_landmarks = {
             'LEFT_SHOULDER': 11,
             'LEFT_ELBOW': 13,
@@ -42,35 +42,35 @@ class PoseDetectionTest:
             'RIGHT_THUMB': 22,
         }
         
-        # 初始化摄像头
-        print("正在连接摄像头...")
+        # Initialize camera
+        print("Connecting to camera...")
         self.cap = cv2.VideoCapture(0)
         
         if not self.cap.isOpened():
-            print("摄像头0无法打开，尝试摄像头1...")
+            print("Camera 0 failed; trying camera 1...")
             self.cap = cv2.VideoCapture(1)
             
         if not self.cap.isOpened():
-            print("错误：无法打开任何摄像头")
+            print("Error: unable to open any camera")
             sys.exit(1)
             
-        # 设置摄像头分辨率
+        # Set camera resolution
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         
-        print("✓ MediaPipe姿态检测启动成功")
-        print("✓ 摄像头连接成功")
-        print("控制说明：")
-        print("  - 按 'q' 键退出")
-        print("  - 按 's' 键保存当前帧")
-        print("  - 站到摄像头前，张开双臂测试检测效果")
-        print("  - 红色点：手臂关键关节")
-        print("  - 绿色线：身体连接")
+        print("✓ MediaPipe pose detection started")
+        print("✓ Camera connected")
+        print("Controls:")
+        print("  - Press 'q' to quit")
+        print("  - Press 's' to save current frame")
+        print("  - Stand in front of camera, raise both arms to test")
+        print("  - Red dots: arm key joints")
+        print("  - Green lines: body connections")
 
     def calculate_arm_angles(self, landmarks):
-        """计算手臂关节角度（用于机器人控制）"""
+        """Compute arm joint angles (for robot control)"""
         def get_angle(p1, p2, p3):
-            """计算三点构成的角度"""
+            """Compute angle formed by three points"""
             v1 = np.array([p1.x - p2.x, p1.y - p2.y])
             v2 = np.array([p3.x - p2.x, p3.y - p2.y])
             
@@ -81,21 +81,21 @@ class PoseDetectionTest:
         
         angles = {}
         
-        # 左臂角度
+        # Left arm angles
         if all(landmarks.landmark[i].visibility > 0.5 for i in [11, 13, 15]):
             left_shoulder_angle = get_angle(
-                landmarks.landmark[11],  # 左肩
-                landmarks.landmark[13],  # 左肘
-                landmarks.landmark[15]   # 左腕
+                landmarks.landmark[11],  # left shoulder
+                landmarks.landmark[13],  # left elbow
+                landmarks.landmark[15]   # left wrist
             )
             angles['left_elbow'] = left_shoulder_angle
         
-        # 右臂角度
+        # Right arm angles
         if all(landmarks.landmark[i].visibility > 0.5 for i in [12, 14, 16]):
             right_shoulder_angle = get_angle(
-                landmarks.landmark[12],  # 右肩
-                landmarks.landmark[14],  # 右肘
-                landmarks.landmark[16]   # 右腕
+                landmarks.landmark[12],  # right shoulder
+                landmarks.landmark[14],  # right elbow
+                landmarks.landmark[16]   # right wrist
             )
             angles['right_elbow'] = right_shoulder_angle
             
@@ -108,43 +108,43 @@ class PoseDetectionTest:
         while True:
             success, image = self.cap.read()
             if not success:
-                print("警告：无法读取摄像头帧，跳过...")
+                print("Warning: unable to read camera frame, skipping...")
                 continue
                 
-            # 翻转图像
+            # Flip image
             image = cv2.flip(image, 1)
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image_rgb.flags.writeable = False
             
-            # 进行姿态检测
+            # Run pose detection
             results = self.pose.process(image_rgb)
             
             image_rgb.flags.writeable = True
             image = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
             
-            # 绘制检测结果
+            # Draw detection results
             pose_detected = False
             if results.pose_landmarks:
                 pose_detected = True
                 
-                # 绘制所有姿态连接
+                # Draw all pose connections
                 self.mp_draw.draw_landmarks(
                     image, results.pose_landmarks, self.mp_pose.POSE_CONNECTIONS,
                     landmark_drawing_spec=self.mp_draw.DrawingSpec(color=(0,255,0), thickness=2, circle_radius=2),
                     connection_drawing_spec=self.mp_draw.DrawingSpec(color=(0,255,0), thickness=2)
                 )
                 
-                # 突出显示手臂关键点
+                # Highlight arm keypoints
                 h, w, c = image.shape
                 for name, idx in self.arm_landmarks.items():
                     landmark = results.pose_landmarks.landmark[idx]
                     if landmark.visibility > 0.5:
                         x, y = int(landmark.x * w), int(landmark.y * h)
-                        cv2.circle(image, (x, y), 8, (0, 0, 255), -1)  # 红色圆点
+                        cv2.circle(image, (x, y), 8, (0, 0, 255), -1)  # red dot
                         cv2.putText(image, name.split('_')[-1], (x-15, y-10), 
                                   cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255), 1)
                 
-                # 计算并显示关节角度
+                # Compute and display joint angles
                 angles = self.calculate_arm_angles(results.pose_landmarks)
                 y_offset = 90
                 for joint, angle in angles.items():
@@ -152,7 +152,7 @@ class PoseDetectionTest:
                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
                     y_offset += 25
             
-            # 显示状态信息
+            # Show status info
             frame_count += 1
             elapsed_time = time.time() - start_time
             if elapsed_time > 0:
@@ -166,10 +166,10 @@ class PoseDetectionTest:
             cv2.putText(image, "Stand back, raise both arms", (10, 450), 
                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
             
-            # 显示图像
+            # Show image
             cv2.imshow('MediaPipe Pose Detection for Robot Control', image)
             
-            # 处理按键
+            # Handle key events
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
                 break
@@ -177,20 +177,20 @@ class PoseDetectionTest:
                 timestamp = time.strftime("%Y%m%d_%H%M%S")
                 filename = f"pose_detection_{timestamp}.jpg"
                 cv2.imwrite(filename, image)
-                print(f"保存图像: {filename}")
+                print(f"Saved image: {filename}")
         
         self.cap.release()
         cv2.destroyAllWindows()
-        print("姿态检测测试结束")
+        print("Pose detection test finished")
 
 def main():
     try:
         detector = PoseDetectionTest()
         detector.run()
     except KeyboardInterrupt:
-        print("\n测试被用户中断")
+        print("\nTest interrupted by user")
     except Exception as e:
-        print(f"发生错误: {e}")
+        print(f"Error occurred: {e}")
         import traceback
         traceback.print_exc()
 

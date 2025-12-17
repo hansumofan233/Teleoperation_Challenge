@@ -1,0 +1,94 @@
+[0.379s] Invoking command in '/home/cnbot/Teleoperation_Challenge/src/robotiq_85_gripper/robotiq_85_driver': CMAKE_PREFIX_PATH=/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs:/home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description:/home/cnbot/Teleoperation_Challenge/install/ur_description:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_description CONDA_PROMPT_MODIFIER=(env_6dofarms) PYTHONPATH=/home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/prefix_override:/home/cnbot/miniconda3/envs/env_6dofarms/lib/python3.10/site-packages/colcon_core/task/python/colcon_distutils_commands:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages /home/cnbot/miniconda3/envs/env_6dofarms/bin/python3.10 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robotiq_85_driver build --build-base /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build install --record /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/install.log --install-scripts $base/lib/robotiq_85_driver --single-version-externally-managed install_data
+[0.503s] /home/cnbot/miniconda3/envs/env_6dofarms/lib/python3.10/site-packages/setuptools/dist.py:599: SetuptoolsDeprecationWarning: Invalid dash-separated key 'script-dir' in 'develop' (setup.cfg), please use the underscore name 'script_dir' instead.
+[0.503s] !!
+[0.503s] 
+[0.503s]         ********************************************************************************
+[0.503s]         Usage of dash-separated 'script-dir' will not be supported in future
+[0.503s]         versions. Please use the underscore name 'script_dir' instead.
+[0.503s] 
+[0.503s]         By 2026-Mar-03, you need to update your project and remove deprecated calls
+[0.503s]         or your builds will no longer be supported.
+[0.503s] 
+[0.503s]         See https://setuptools.pypa.io/en/latest/userguide/declarative_config.html for details.
+[0.503s]         ********************************************************************************
+[0.504s] 
+[0.504s] !!
+[0.504s]   opt = self._enforce_underscore(opt, section)
+[0.517s] /home/cnbot/miniconda3/envs/env_6dofarms/lib/python3.10/site-packages/setuptools/_distutils/dist.py:289: UserWarning: Unknown distribution option: 'tests_require'
+[0.517s]   warnings.warn(msg)
+[0.531s] /home/cnbot/miniconda3/envs/env_6dofarms/lib/python3.10/site-packages/setuptools/dist.py:599: SetuptoolsDeprecationWarning: Invalid dash-separated key 'script-dir' in 'develop' (setup.cfg), please use the underscore name 'script_dir' instead.
+[0.531s] !!
+[0.531s] 
+[0.531s]         ********************************************************************************
+[0.531s]         Usage of dash-separated 'script-dir' will not be supported in future
+[0.531s]         versions. Please use the underscore name 'script_dir' instead.
+[0.531s]         (Affected: robotiq_85_driver).
+[0.531s] 
+[0.531s]         By 2026-Mar-03, you need to update your project and remove deprecated calls
+[0.531s]         or your builds will no longer be supported.
+[0.532s] 
+[0.532s]         See https://setuptools.pypa.io/en/latest/userguide/declarative_config.html for details.
+[0.532s]         ********************************************************************************
+[0.532s] 
+[0.532s] !!
+[0.532s]   opt = self._enforce_underscore(opt, section)
+[0.550s] running egg_info
+[0.555s] creating ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info
+[0.555s] writing ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/PKG-INFO
+[0.556s] writing dependency_links to ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/dependency_links.txt
+[0.556s] writing entry points to ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/entry_points.txt
+[0.556s] writing requirements to ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/requires.txt
+[0.556s] writing top-level names to ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/top_level.txt
+[0.556s] writing manifest file '../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/SOURCES.txt'
+[0.569s] reading manifest file '../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/SOURCES.txt'
+[0.569s] writing manifest file '../../../build/robotiq_85_driver/robotiq_85_driver.egg-info/SOURCES.txt'
+[0.569s] running build
+[0.569s] running build_py
+[0.569s] creating /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+[0.569s] copying robotiq_85_driver/robotiq_85_test_close.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+[0.569s] copying robotiq_85_driver/robotiq_85_test.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+[0.569s] copying robotiq_85_driver/robotiq_85_driver.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+[0.569s] copying robotiq_85_driver/__init__.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+[0.569s] copying robotiq_85_driver/single_robotiq_85_action_server.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver
+[0.570s] creating /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver
+[0.570s] copying robotiq_85_driver/driver/gripper_io.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver
+[0.570s] copying robotiq_85_driver/driver/robotiq_85_gripper.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver
+[0.570s] copying robotiq_85_driver/driver/__init__.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver
+[0.570s] copying robotiq_85_driver/driver/modbus_crc.py -> /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver
+[0.570s] running install
+[0.572s] running install_lib
+[0.577s] creating /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+[0.577s] copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/robotiq_85_test_close.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+[0.577s] copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/robotiq_85_test.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+[0.577s] copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/robotiq_85_driver.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+[0.577s] copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/__init__.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+[0.577s] creating /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver
+[0.577s] copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver/gripper_io.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver
+[0.577s] copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver/robotiq_85_gripper.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver
+[0.578s] copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver/__init__.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver
+[0.578s] copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/driver/modbus_crc.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver
+[0.578s] copying /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build/lib/robotiq_85_driver/single_robotiq_85_action_server.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver
+[0.578s] byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/robotiq_85_test_close.py to robotiq_85_test_close.cpython-310.pyc
+[0.578s] byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/robotiq_85_test.py to robotiq_85_test.cpython-310.pyc
+[0.579s] byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/robotiq_85_driver.py to robotiq_85_driver.cpython-310.pyc
+[0.580s] byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/__init__.py to __init__.cpython-310.pyc
+[0.580s] byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver/gripper_io.py to gripper_io.cpython-310.pyc
+[0.580s] byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver/robotiq_85_gripper.py to robotiq_85_gripper.cpython-310.pyc
+[0.581s] byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver/__init__.py to __init__.cpython-310.pyc
+[0.581s] byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/driver/modbus_crc.py to modbus_crc.cpython-310.pyc
+[0.585s] byte-compiling /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver/single_robotiq_85_action_server.py to single_robotiq_85_action_server.cpython-310.pyc
+[0.585s] running install_data
+[0.585s] creating /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/share/ament_index/resource_index/packages
+[0.585s] copying resource/robotiq_85_driver -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/share/ament_index/resource_index/packages
+[0.585s] copying package.xml -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/share/robotiq_85_driver
+[0.585s] creating /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/share/robotiq_85_driver/launch
+[0.585s] copying launch/gripper_driver.launch.py -> /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/share/robotiq_85_driver/launch
+[0.585s] running install_egg_info
+[0.588s] Copying ../../../build/robotiq_85_driver/robotiq_85_driver.egg-info to /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages/robotiq_85_driver-1.0.0-py3.10.egg-info
+[0.588s] running install_scripts
+[0.599s] Installing robotiq_85_driver script to /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/robotiq_85_driver
+[0.600s] Installing robotiq_85_test script to /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/robotiq_85_driver
+[0.600s] Installing robotiq_85_test_close script to /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/robotiq_85_driver
+[0.600s] Installing single_robotiq_85_action_server script to /home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/robotiq_85_driver
+[0.600s] writing list of installed files to '/home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/install.log'
+[0.632s] Invoked command in '/home/cnbot/Teleoperation_Challenge/src/robotiq_85_gripper/robotiq_85_driver' returned '0': CMAKE_PREFIX_PATH=/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs:/home/cnbot/Teleoperation_Challenge/install/dual_ur3e_description:/home/cnbot/Teleoperation_Challenge/install/ur_description:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_gripper:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_description CONDA_PROMPT_MODIFIER=(env_6dofarms) PYTHONPATH=/home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/prefix_override:/home/cnbot/miniconda3/envs/env_6dofarms/lib/python3.10/site-packages/colcon_core/task/python/colcon_distutils_commands:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_msgs/lib/python3.10/site-packages:/home/cnbot/Teleoperation_Challenge/install/robotiq_85_driver/lib/python3.10/site-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages /home/cnbot/miniconda3/envs/env_6dofarms/bin/python3.10 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/robotiq_85_driver build --build-base /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/build install --record /home/cnbot/Teleoperation_Challenge/build/robotiq_85_driver/install.log --install-scripts $base/lib/robotiq_85_driver --single-version-externally-managed install_data

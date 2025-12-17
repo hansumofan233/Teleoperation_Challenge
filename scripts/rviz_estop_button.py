@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-RViz 急停 按钮（交互标记）
+RViz E-Stop button (Interactive Marker)
 
-在 RViz 中添加 InteractiveMarkers 显示，并将 Update Topic 设置为：/teleop_estop/update
-点击按钮调用 /teleop/estop(Trigger)，触发急停（Teleop 输出禁用）。
+Add an InteractiveMarkers display in RViz and set Update Topic to: /teleop_estop/update
+Clicking the button calls /teleop/estop (Trigger) to activate emergency stop (teleop output disabled).
 """
 
 import rclpy
@@ -18,10 +18,10 @@ from geometry_msgs.msg import Pose
 class RVizEStopButton(Node):
     def __init__(self):
         super().__init__('rviz_estop_button')
-        # Interactive Marker Server，命名为 teleop_estop
+        # Interactive Marker Server named teleop_estop
         self.server = InteractiveMarkerServer(self, 'teleop_estop')
 
-        # 参数：允许通过 ROS 参数调节按钮位置与大小
+        # Parameters: tune button position and size via ROS parameters
         self.declare_parameter('button_x', -0.2)
         self.declare_parameter('button_y', 0.5)
         self.declare_parameter('button_z', 0.8)
@@ -31,11 +31,11 @@ class RVizEStopButton(Node):
         bz = float(self.get_parameter('button_z').value)
         bsize = float(self.get_parameter('button_size').value)
 
-        # 创建按钮
+        # Create button
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = 'world'
         int_marker.name = 'estop_button'
-        int_marker.description = ''  # 去掉自带小标签
+        int_marker.description = ''  # remove default label
         int_marker.scale = max(0.1, bsize)
         int_marker.pose = Pose()
         int_marker.pose.position.x = 0.55
@@ -73,17 +73,17 @@ class RVizEStopButton(Node):
         self.server.setCallback(int_marker.name, self._process_feedback)
         self.server.applyChanges()
 
-        # 服务客户端
+        # Service client
         self.cli = self.create_client(Trigger, '/teleop/estop')
-        self.get_logger().info('RViz E-Stop 按钮已创建，RViz里配置 InteractiveMarkers: /teleop_estop/update')
+        self.get_logger().info('RViz E-Stop button created. In RViz, configure InteractiveMarkers: /teleop_estop/update')
 
     def _process_feedback(self, feedback):
         evt = feedback.event_type
         if evt in (1, 5):  # BUTTON_CLICK / MOUSE_UP
             if not self.cli.service_is_ready():
-                self.get_logger().warn('等待 /teleop/estop 服务就绪...')
+                self.get_logger().warn('Waiting for /teleop/estop service to be ready...')
                 if not self.cli.wait_for_service(timeout_sec=2.0):
-                    self.get_logger().error('服务未就绪，无法急停')
+                    self.get_logger().error('Service not ready, cannot perform E-Stop')
                     return
             req = Trigger.Request()
             future = self.cli.call_async(req)
@@ -95,9 +95,9 @@ class RVizEStopButton(Node):
             if resp.success:
                 self.get_logger().error(resp.message)
             else:
-                self.get_logger().error(f'急停失败: {resp.message}')
+                self.get_logger().error(f'E-Stop failed: {resp.message}')
         except Exception as e:
-            self.get_logger().error(f'调用服务异常: {e}')
+            self.get_logger().error(f'Exception calling service: {e}')
 
 
 def main(args=None):

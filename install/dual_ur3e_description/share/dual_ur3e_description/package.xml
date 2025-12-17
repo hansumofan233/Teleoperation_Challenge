@@ -9,11 +9,11 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   
-  <!-- 依赖现有下载的包 -->
+  <!-- Depends on already-downloaded packages -->
   <depend>ur_description</depend>
   <depend>robotiq_85_description</depend>
   
-  <!-- ROS2基础依赖 -->
+  <!-- Core ROS 2 dependencies -->
   <depend>xacro</depend>
   <depend>robot_state_publisher</depend>
   <depend>joint_state_publisher</depend>

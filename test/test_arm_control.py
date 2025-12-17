@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-定制的机器人手臂控制检测脚本
-只检测和显示肩、肘、腕、手部关键点
-专门为UR3e双臂机器人设计
+Custom robot arm control detection script
+Detects and displays shoulder, elbow, wrist, and hand keypoints only
+Designed specifically for dual UR3e robots
 """
 
 import cv2
@@ -13,9 +13,9 @@ import sys
 
 class ArmControlDetection:
     def __init__(self):
-        print("正在初始化定制手臂检测系统...")
+        print("Initializing custom arm detection system...")
         
-        # 初始化MediaPipe姿态检测
+        # Initialize MediaPipe pose detection
         self.mp_pose = mp.solutions.pose
         self.pose = self.mp_pose.Pose(
             static_image_mode=False,
@@ -26,7 +26,7 @@ class ArmControlDetection:
             min_tracking_confidence=0.5
         )
         
-        # 初始化MediaPipe手部检测（获得更精确的手部信息）
+        # Initialize MediaPipe hands (more precise hand info)
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
             static_image_mode=False,
@@ -37,57 +37,57 @@ class ArmControlDetection:
         
         self.mp_draw = mp.solutions.drawing_utils
         
-        # 定义机器人控制需要的关键点（仅手臂部分）
+        # Define keypoints needed for robot control (arms only)
         self.arm_keypoints = {
-            # 左臂
+            # left arm
             'LEFT_SHOULDER': 11,
             'LEFT_ELBOW': 13,
             'LEFT_WRIST': 15,
-            # 右臂
+            # right arm
             'RIGHT_SHOULDER': 12,
             'RIGHT_ELBOW': 14,
             'RIGHT_WRIST': 16,
         }
         
-        # 定义手臂连接（仅绘制手臂骨架）
+        # define connections for drawing
         self.arm_connections = [
-            (11, 13),  # 左肩到左肘
-            (13, 15),  # 左肘到左腕
-            (12, 14),  # 右肩到右肘  
-            (14, 16),  # 右肘到右腕
-            (11, 12),  # 左肩到右肩
+            (11, 13),  # left shoulder to left elbow
+            (13, 15),  # left elbow to left wrist
+            (12, 14),  # right shoulder to right elbow  
+            (14, 16),  # right elbow to right wrist
+            (11, 12),  # left shoulder to right shoulder
         ]
         
-        # 初始化摄像头
-        print("正在连接摄像头...")
+        # Initialize camera
+        print("Connecting to camera...")
         self.cap = cv2.VideoCapture(0)
         
         if not self.cap.isOpened():
-            print("摄像头0无法打开，尝试摄像头1...")
+            print("Camera 0 failed; trying camera 1...")
             self.cap = cv2.VideoCapture(1)
             
         if not self.cap.isOpened():
-            print("错误：无法打开任何摄像头")
+            print("Error: unable to open any camera")
             sys.exit(1)
             
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         
-        print("✓ 定制手臂检测系统启动成功")
-        print("✓ 摄像头连接成功")
-        print("控制说明：")
-        print("  - 按 'q' 键退出")
-        print("  - 按 's' 键保存当前帧")
-        print("  - 按 'h' 切换手部细节显示")
-        print("  - 蓝色：肩膀关节")
-        print("  - 绿色：肘部关节") 
-        print("  - 红色：手腕关节")
-        print("  - 黄色：手部关键点")
+        print("✓ Custom arm detection started")
+        print("✓ Camera connected")
+        print("Controls:")
+        print("  - Press 'q' to quit")
+        print("  - Press 's' to save current frame")
+        print("  - Press 'h' to toggle hand details")
+        print("  - Blue: shoulder joints")
+        print("  - Green: elbow joints") 
+        print("  - Red: wrist joints")
+        print("  - Yellow: hand keypoints")
 
     def calculate_joint_angles(self, pose_landmarks):
-        """计算机器人控制需要的关节角度"""
+        """Compute joint angles needed for robot control"""
         def get_angle_3d(p1, p2, p3):
-            """计算3D空间中三点的角度"""
+            """Compute angle among three points in 3D space"""
             v1 = np.array([p1.x - p2.x, p1.y - p2.y, p1.z - p2.z])
             v2 = np.array([p3.x - p2.x, p3.y - p2.y, p3.z - p2.z])
             
@@ -99,32 +99,32 @@ class ArmControlDetection:
         angles = {}
         landmarks = pose_landmarks.landmark
         
-        # 左臂关节角度
+        # Left arm joint angles
         if all(landmarks[i].visibility > 0.5 for i in [11, 13, 15]):
-            # 左肩角度 (上臂与躯干的角度)
+            # Left shoulder angle (upper arm vs torso)
             angles['left_shoulder'] = get_angle_3d(
-                landmarks[13], landmarks[11], landmarks[12]  # 肘-肩-右肩
+                landmarks[13], landmarks[11], landmarks[12]  
             )
-            # 左肘角度 (前臂与上臂的角度)
+            # Left elbow angle (forearm vs upper arm)
             angles['left_elbow'] = get_angle_3d(
-                landmarks[11], landmarks[13], landmarks[15]  # 肩-肘-腕
+                landmarks[11], landmarks[13], landmarks[15]  
             )
         
-        # 右臂关节角度
+        # Right arm joint angles
         if all(landmarks[i].visibility > 0.5 for i in [12, 14, 16]):
-            # 右肩角度
+            # Right shoulder angle
             angles['right_shoulder'] = get_angle_3d(
-                landmarks[14], landmarks[12], landmarks[11]  # 肘-肩-左肩
+                landmarks[14], landmarks[12], landmarks[11]  
             )
-            # 右肘角度
+            # Right elbow angle
             angles['right_elbow'] = get_angle_3d(
-                landmarks[12], landmarks[14], landmarks[16]  # 肩-肘-腕
+                landmarks[12], landmarks[14], landmarks[16]  
             )
             
         return angles
 
     def get_robot_coordinates(self, pose_landmarks, hand_landmarks_list=None):
-        """获取机器人控制坐标（标准化到[-1,1]范围）"""
+        """Get robot control coordinates (normalized to [-1, 1])"""
         robot_data = {
             'left_arm': {},
             'right_arm': {},
@@ -134,23 +134,23 @@ class ArmControlDetection:
         if pose_landmarks:
             landmarks = pose_landmarks.landmark
             
-            # 左臂坐标
-            if landmarks[15].visibility > 0.5:  # 左腕可见
+            # left arm coordinates
+            if landmarks[15].visibility > 0.5:  # left wrist visible
                 robot_data['left_arm'] = {
                     'shoulder': [landmarks[11].x, landmarks[11].y, landmarks[11].z],
                     'elbow': [landmarks[13].x, landmarks[13].y, landmarks[13].z],
                     'wrist': [landmarks[15].x, landmarks[15].y, landmarks[15].z]
                 }
             
-            # 右臂坐标
-            if landmarks[16].visibility > 0.5:  # 右腕可见
+            # right arm coordinates
+            if landmarks[16].visibility > 0.5:  # right wrist visible
                 robot_data['right_arm'] = {
                     'shoulder': [landmarks[12].x, landmarks[12].y, landmarks[12].z],
                     'elbow': [landmarks[14].x, landmarks[14].y, landmarks[14].z],
                     'wrist': [landmarks[16].x, landmarks[16].y, landmarks[16].z]
                 }
         
-        # 手部精确坐标
+        # Precise hand coordinates
         if hand_landmarks_list:
             for hand_landmarks in hand_landmarks_list:
                 hand_data = {
@@ -173,18 +173,18 @@ class ArmControlDetection:
         while True:
             success, image = self.cap.read()
             if not success:
-                print("警告：无法读取摄像头帧，跳过...")
+                print("Warning: Unable to read camera frame, skipping...")
                 continue
                 
-            # 翻转图像
+            # Flip image
             image = cv2.flip(image, 1)
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image_rgb.flags.writeable = False
             
-            # 姿态检测
+            # Pose detection
             pose_results = self.pose.process(image_rgb)
             
-            # 手部检测
+            # Hand detection
             hand_results = None
             if show_hand_details:
                 hand_results = self.hands.process(image_rgb)
@@ -192,32 +192,32 @@ class ArmControlDetection:
             image_rgb.flags.writeable = True
             image = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
             
-            # 处理检测结果
+            # Process detection results
             arms_detected = False
             if pose_results.pose_landmarks:
                 arms_detected = True
                 landmarks = pose_results.pose_landmarks.landmark
                 h, w, c = image.shape
                 
-                # 只绘制手臂关键点
+                # only draw arm keypoints
                 for name, idx in self.arm_keypoints.items():
                     landmark = landmarks[idx]
                     if landmark.visibility > 0.5:
                         x, y = int(landmark.x * w), int(landmark.y * h)
                         
-                        # 根据关节类型设置不同颜色
+                        # Set different colors based on joint type
                         if 'SHOULDER' in name:
-                            color = (255, 0, 0)  # 蓝色
+                            color = (255, 0, 0)  # blue
                         elif 'ELBOW' in name:
-                            color = (0, 255, 0)  # 绿色
+                            color = (0, 255, 0)  # green
                         elif 'WRIST' in name:
-                            color = (0, 0, 255)  # 红色
+                            color = (0, 0, 255)  # red
                         
                         cv2.circle(image, (x, y), 10, color, -1)
                         cv2.putText(image, name.split('_')[1][:3], (x-15, y-15), 
                                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
                 
-                # 绘制手臂连接线
+                # Draw arm connection lines
                 for connection in self.arm_connections:
                     start_idx, end_idx = connection
                     start_landmark = landmarks[start_idx]
@@ -228,7 +228,7 @@ class ArmControlDetection:
                         end_x, end_y = int(end_landmark.x * w), int(end_landmark.y * h)
                         cv2.line(image, (start_x, start_y), (end_x, end_y), (255, 255, 255), 3)
                 
-                # 计算和显示关节角度
+                # Calculate and display joint angles
                 angles = self.calculate_joint_angles(pose_results.pose_landmarks)
                 y_offset = 90
                 for joint, angle in angles.items():
@@ -236,26 +236,26 @@ class ArmControlDetection:
                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
                     y_offset += 25
             
-            # 绘制手部细节
+            # Draw hand details
             hands_detected = 0
             if show_hand_details and hand_results and hand_results.multi_hand_landmarks:
                 hands_detected = len(hand_results.multi_hand_landmarks)
                 for hand_landmarks in hand_results.multi_hand_landmarks:
-                    # 只绘制关键手指关键点
-                    key_points = [0, 4, 8, 12, 16, 20]  # 腕、拇指尖、食指尖、中指尖、无名指尖、小指尖
+                    # Only draw key finger landmarks
+                    key_points = [0, 4, 8, 12, 16, 20]  # wrist, thumb tip, index tip, middle tip, ring tip, pinky tip
                     h, w, c = image.shape
                     for idx in key_points:
                         landmark = hand_landmarks.landmark[idx]
                         x, y = int(landmark.x * w), int(landmark.y * h)
-                        cv2.circle(image, (x, y), 6, (0, 255, 255), -1)  # 黄色
+                        cv2.circle(image, (x, y), 6, (0, 255, 255), -1)  # yellow
             
-            # 获取机器人控制数据
+            # Get robot control data
             robot_data = self.get_robot_coordinates(
                 pose_results.pose_landmarks if pose_results.pose_landmarks else None,
                 hand_results.multi_hand_landmarks if hand_results and hand_results.multi_hand_landmarks else None
             )
             
-            # 显示状态信息
+            # Show status information
             frame_count += 1
             elapsed_time = time.time() - start_time
             if elapsed_time > 0:
@@ -269,10 +269,10 @@ class ArmControlDetection:
             cv2.putText(image, f"Hand Details: {'ON' if show_hand_details else 'OFF'} (Press 'h')", (10, 450), 
                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
             
-            # 显示图像
+            # Show image
             cv2.imshow('Robot Arm Control Detection', image)
             
-            # 处理按键
+            # Handle key events
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
                 break
@@ -280,23 +280,23 @@ class ArmControlDetection:
                 timestamp = time.strftime("%Y%m%d_%H%M%S")
                 filename = f"arm_control_{timestamp}.jpg"
                 cv2.imwrite(filename, image)
-                print(f"保存图像: {filename}")
+                print(f"Saved image: {filename}")
             elif key == ord('h'):
                 show_hand_details = not show_hand_details
-                print(f"手部细节显示: {'开启' if show_hand_details else '关闭'}")
+                print(f"Hand details: {'ON' if show_hand_details else 'OFF'}")
         
         self.cap.release()
         cv2.destroyAllWindows()
-        print("机器人手臂控制检测结束")
+        print("Robot arm control detection finished")
 
 def main():
     try:
         detector = ArmControlDetection()
         detector.run()
     except KeyboardInterrupt:
-        print("\n检测被用户中断")
+        print("\nDetection interrupted by user")
     except Exception as e:
-        print(f"发生错误: {e}")
+        print(f"Error occurred: {e}")
         import traceback
         traceback.print_exc()
 

@@ -33,7 +33,7 @@
       <inertia ixx="0.5" ixy="0" ixz="0" iyy="1" iyz="0" izz="1.5"/>
     </inertial>
   </link>
-  <!-- Left arm base mount - 位于 (-0.5, 0)，保持末端朝向 -X -->
+  <!-- Left arm base mount - positioned at (-0.5, 0), end-effector facing -X -->
   <joint name="table_to_left_base" type="fixed">
     <parent link="table_link"/>
     <child link="left_base_mount"/>
@@ -61,7 +61,7 @@
       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
   </link>
-  <!-- Right arm base mount - 位于 (0.5, 0)，保持末端朝向 +X -->
+  <!-- Right arm base mount - positioned at (0.5, 0), end-effector facing +X -->
   <joint name="table_to_right_base" type="fixed">
     <parent link="table_link"/>
     <child link="right_base_mount"/>

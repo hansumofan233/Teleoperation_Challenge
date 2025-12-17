@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-RViz 重置按钮（交互标记）
+RViz Reset button (Interactive Marker)
 
-在 RViz 中添加 InteractiveMarkers 显示，并将 Update Topic 设置为：/teleop_reset/update
-点击按钮即可调用 /teleop/reset_reference 服务，重置 Teleop 参考与模型初始位置。
+Add an InteractiveMarkers display in RViz and set Update Topic to: /teleop_reset/update
+Clicking the button calls /teleop/reset_reference to reset teleop reference and model initial pose.
 """
 
 import rclpy
@@ -19,10 +19,10 @@ from geometry_msgs.msg import Pose
 class RVizResetButton(Node):
     def __init__(self):
         super().__init__('rviz_reset_button')
-        # Interactive Marker Server，命名为 teleop_reset
+        # Interactive Marker Server named teleop_reset
         self.server = InteractiveMarkerServer(self, 'teleop_reset')
 
-        # 参数：允许通过 ROS 参数调节按钮位置与大小
+        # Parameters: tune button position and size via ROS parameters
         self.declare_parameter('button_x', 0.0)
         self.declare_parameter('button_y', 0.5)
         self.declare_parameter('button_z', 1.5)
@@ -32,19 +32,18 @@ class RVizResetButton(Node):
         bz = float(self.get_parameter('button_z').value)
         bsize = float(self.get_parameter('button_size').value)
 
-        # 创建一个按钮样式的交互标记
+        # Create a button-style interactive marker
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = 'world'
         int_marker.name = 'reset_button'
-        # 去掉交互标记自带描述，避免出现两个“Reset”标签
-        int_marker.description = ''
+        int_marker.description = ''  # remove default description to avoid duplicate "Reset" labels
         int_marker.scale = max(0.1, bsize)
         int_marker.pose = Pose()
         int_marker.pose.position.x = 0.3
         int_marker.pose.position.y = 0.25
         int_marker.pose.position.z = 0.8
 
-        # 可视化方块
+        # Visual cube
         box = Marker()
         box.type = Marker.CUBE
         box.scale.x = bsize
@@ -55,7 +54,7 @@ class RVizResetButton(Node):
         box.color.b = 0.2
         box.color.a = 0.9
 
-        # 文本标签
+        # Text label
         text = Marker()
         text.type = Marker.TEXT_VIEW_FACING
         text.text = 'Reset'
@@ -73,32 +72,32 @@ class RVizResetButton(Node):
         control_btn.markers.append(text)
         int_marker.controls.append(control_btn)
 
-        # 固定按钮位置：不添加拖拽控件，避免误移动
+        # Fixed button position: do not add drag controls to prevent accidental moves
 
-        # ROS 2 API: 先插入，再通过 setCallback 绑定反馈
+        # ROS 2 API: insert then bind feedback with setCallback
         self.server.insert(int_marker)
         self.server.setCallback(int_marker.name, self._process_feedback)
         self.server.applyChanges()
 
-        # 准备服务客户端 + 重置广播话题
+        # Prepare service client + reset broadcast topic
         self.cli = self.create_client(Trigger, '/teleop/reset_reference')
         self.reset_pub = self.create_publisher(Empty, '/teleop/reset', 10)
-        self.get_logger().info('RViz Reset 按钮已创建，RViz里配置 InteractiveMarkers: /teleop_reset/update')
+        self.get_logger().info('RViz Reset button created. In RViz, configure InteractiveMarkers: /teleop_reset/update')
 
     def _process_feedback(self, feedback):
-        # 响应按钮点击：兼容 BUTTON_CLICK(1) 与 MOUSE_UP(5)
+        # Handle button click: support BUTTON_CLICK(1) and MOUSE_UP(5)
         evt = feedback.event_type
         if evt in (1, 5):
             if not self.cli.service_is_ready():
-                self.get_logger().warn('等待 /teleop/reset_reference 服务就绪...')
+                self.get_logger().warn('Waiting for /teleop/reset_reference service to be ready...')
                 if not self.cli.wait_for_service(timeout_sec=2.0):
-                    self.get_logger().error('服务未就绪，无法重置')
+                    self.get_logger().error('Service not ready, cannot reset')
                     return
-            # 先调用 Teleop 主服务完成模型重置
+            # First call teleop main service to reset model
             req = Trigger.Request()
             future = self.cli.call_async(req)
             future.add_done_callback(self._on_call_done)
-            # 并向其他节点广播统一重置信号（如摄像头节点）
+            # Then broadcast a unified reset signal to other nodes (e.g., camera)
             self.reset_pub.publish(Empty())
 
     def _on_call_done(self, future):
@@ -107,9 +106,9 @@ class RVizResetButton(Node):
             if resp.success:
                 self.get_logger().info(resp.message)
             else:
-                self.get_logger().error(f'重置失败: {resp.message}')
+                self.get_logger().error(f'Reset failed: {resp.message}')
         except Exception as e:
-            self.get_logger().error(f'调用服务异常: {e}')
+            self.get_logger().error(f'Exception calling service: {e}')
 
 
 def main(args=None):

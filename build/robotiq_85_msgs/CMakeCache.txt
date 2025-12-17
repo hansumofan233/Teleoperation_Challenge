@@ -25,7 +25,7 @@ AMENT_CMAKE_ENVIRONMENT_PARENT_PREFIX_PATH_GENERATION:BOOL=ON
 
 //Replace the CMake install command with a custom implementation
 // using symlinks instead of copying resources
-AMENT_CMAKE_SYMLINK_INSTALL:BOOL=1
+AMENT_CMAKE_SYMLINK_INSTALL:BOOL=OFF
 
 //Generate an uninstall target to revert the effects of the install
 // step
@@ -611,6 +611,4 @@ _Python3_EXECUTABLE:INTERNAL=/home/cnbot/miniconda3/envs/env_6dofarms/bin/python
 //Python3 Properties
 _Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;10;19;64;;cpython-310-x86_64-linux-gnu;/home/cnbot/miniconda3/envs/env_6dofarms/lib/python3.10;/home/cnbot/miniconda3/envs/env_6dofarms/lib/python3.10;/home/cnbot/miniconda3/envs/env_6dofarms/lib/python3.10/site-packages;/home/cnbot/miniconda3/envs/env_6dofarms/lib/python3.10/site-packages
 _Python3_INTERPRETER_SIGNATURE:INTERNAL=b0e3d7927f3b52ae2813b379af68605d
-//Index for unique symlink install targets
-__AMENT_CMAKE_SYMLINK_INSTALL_TARGETS_INDEX:INTERNAL=3
 

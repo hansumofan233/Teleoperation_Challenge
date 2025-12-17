@@ -1,4 +1,0 @@
-Invoking command in '/home/cnbot/Teleoperation_Challenge/build/ur_description': CMAKE_PREFIX_PATH=/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake --build /home/cnbot/Teleoperation_Challenge/build/ur_description -- -j24 -l24
-Invoked command in '/home/cnbot/Teleoperation_Challenge/build/ur_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake --build /home/cnbot/Teleoperation_Challenge/build/ur_description -- -j24 -l24
-Invoking command in '/home/cnbot/Teleoperation_Challenge/build/ur_description': CMAKE_PREFIX_PATH=/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake --install /home/cnbot/Teleoperation_Challenge/build/ur_description
-Invoked command in '/home/cnbot/Teleoperation_Challenge/build/ur_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble CONDA_PROMPT_MODIFIER=(env_6dofarms) /usr/bin/cmake --install /home/cnbot/Teleoperation_Challenge/build/ur_description

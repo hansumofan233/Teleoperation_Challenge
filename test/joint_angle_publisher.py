@@ -8,7 +8,7 @@ class JointAnglePublisher(Node):
     def __init__(self):
         super().__init__('joint_angle_publisher')
         
-        # 订阅关节状态
+        # Subscribe to joint states
         self.joint_subscription = self.create_subscription(
             JointState,
             '/joint_states',
@@ -16,14 +16,14 @@ class JointAnglePublisher(Node):
             10
         )
         
-        # 发布当前关节角度 - 这是您的最终目标
+        # Publish current joint angles - primary output
         self.all_angles_publisher = self.create_publisher(
             Float64MultiArray,
-            '/current_joint_angles',  # 用于可视化平台
+            '/current_joint_angles',  # For visualization platform
             10
         )
         
-        # 分别发布左右臂角度
+        # Publish left/right arm angles separately
         self.left_arm_publisher = self.create_publisher(
             Float64MultiArray,
             '/left_arm/joint_angles',
@@ -36,44 +36,44 @@ class JointAnglePublisher(Node):
             10
         )
         
-        # 发布夹爪角度
+        # Publish gripper angles
         self.gripper_publisher = self.create_publisher(
             Float64MultiArray,
             '/gripper_angles',
             10
         )
         
-        # 状态定时器
+        # Status timer
         self.status_timer = self.create_timer(2.0, self.publish_status)
         
-        # 存储当前角度
+        # Store current angles
         self.current_joint_states = {}
         self.left_arm_joints = []
         self.right_arm_joints = []
         self.gripper_joints = []
         
-        self.get_logger().info('=== 关节角度发布器已启动 ===')
-        self.get_logger().info('目标: 将可视化平台上的当前关节角度值发布为ROS消息')
+        self.get_logger().info('=== Joint Angle Publisher started ===')
+        self.get_logger().info('Goal: publish current joint angles from visualization as ROS messages')
         
     def joint_callback(self, msg):
-        """处理关节状态并发布角度数据 - 核心功能"""
+        """Process joint states and publish angle data - core function"""
         try:
-            # 更新关节状态字典
+            # Update joint state dict
             for i, name in enumerate(msg.name):
                 if i < len(msg.position):
                     self.current_joint_states[name] = msg.position[i]
             
-            # 分类关节角度
+            # Classify joint angles
             left_angles = []
             right_angles = []
             gripper_angles = []
             all_angles = []
             
-            # 按照UR3e关节顺序处理
+            # Process in UR3e joint order
             ur_joints = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                         'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
             
-            # 处理左臂关节
+            # Left arm joints
             for joint in ur_joints:
                 left_joint_name = f'left_{joint}'
                 if left_joint_name in self.current_joint_states:
@@ -81,7 +81,7 @@ class JointAnglePublisher(Node):
                     left_angles.append(angle)
                     all_angles.append(angle)
             
-            # 处理右臂关节
+            # Right arm joints
             for joint in ur_joints:
                 right_joint_name = f'right_{joint}'
                 if right_joint_name in self.current_joint_states:
@@ -89,7 +89,7 @@ class JointAnglePublisher(Node):
                     right_angles.append(angle)
                     all_angles.append(angle)
             
-            # 处理夹爪关节
+            # Gripper joints
             gripper_joint_names = ['left_robotiq_85_left_knuckle_joint', 'right_robotiq_85_left_knuckle_joint']
             for gripper_joint in gripper_joint_names:
                 if gripper_joint in self.current_joint_states:
@@ -97,13 +97,13 @@ class JointAnglePublisher(Node):
                     gripper_angles.append(angle)
                     all_angles.append(angle)
             
-            # 发布所有角度 - 这是您的主要目标
+            # Publish all angles - primary target
             if all_angles:
                 all_msg = Float64MultiArray()
                 all_msg.data = all_angles
                 self.all_angles_publisher.publish(all_msg)
             
-            # 发布分类角度
+            # Publish categorized angles
             if left_angles:
                 left_msg = Float64MultiArray()
                 left_msg.data = left_angles
@@ -123,34 +123,34 @@ class JointAnglePublisher(Node):
                 self.gripper_joints = gripper_angles
                 
         except Exception as e:
-            self.get_logger().error(f'处理关节状态时出错: {e}')
+            self.get_logger().error(f'Error processing joint states: {e}')
     
     def publish_status(self):
-        """定期发布状态信息"""
+        """Publish status periodically"""
         if self.left_arm_joints and self.right_arm_joints:
-            # 转换为度数显示
+            # Convert to degrees for display
             left_degrees = [math.degrees(angle) for angle in self.left_arm_joints]
             right_degrees = [math.degrees(angle) for angle in self.right_arm_joints]
             
-            self.get_logger().info(f'左臂关节角度(度): {[f"{a:.1f}" for a in left_degrees]}')
-            self.get_logger().info(f'右臂关节角度(度): {[f"{a:.1f}" for a in right_degrees]}')
+            self.get_logger().info(f'Left arm joint angles (deg): {[f"{a:.1f}" for a in left_degrees]}')
+            self.get_logger().info(f'Right arm joint angles (deg): {[f"{a:.1f}" for a in right_degrees]}')
             
             if self.gripper_joints:
                 gripper_degrees = [math.degrees(angle) for angle in self.gripper_joints]
-                self.get_logger().info(f'夹爪角度(度): {[f"{a:.1f}" for a in gripper_degrees]}')
+                self.get_logger().info(f'Gripper angles (deg): {[f"{a:.1f}" for a in gripper_degrees]}')
         else:
-            self.get_logger().warn('等待关节状态数据...')
+            self.get_logger().warn('Waiting for joint state data...')
 def main(args=None):
     rclpy.init(args=args)
     
     try:
         node = JointAnglePublisher()
-        node.get_logger().info('开始发布关节角度数据...')
+        node.get_logger().info('Publishing joint angle data...')
         rclpy.spin(node)
     except KeyboardInterrupt:
-        print('\n正在关闭关节角度发布器...')
+        print('\nShutting down Joint Angle Publisher...')
     except Exception as e:
-        print(f'节点运行出错: {e}')
+        print(f'Node runtime error: {e}')
     finally:
         if 'node' in locals():
             node.destroy_node()
