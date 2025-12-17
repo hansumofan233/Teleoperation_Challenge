@@ -62,6 +62,9 @@ class TeleopEndEffectorControl(Node):
         self.declare_parameter('dominant_ratio', 1.5)  # dominant-arm movement ratio threshold
         self.declare_parameter('min_world_delta_x', 0.005)  # min world ΔX (m)
         self.declare_parameter('min_world_delta_z', 0.003)  # min world ΔZ (m), improve small up/down sensitivity
+        # Display scaling (visual only, does not affect computation)
+        # Set to sqrt(2) ≈ 1.414 to get ~2x area
+        self.declare_parameter('display_scale', 1.41421356)
         
         # Get parameters
         self.workspace_x_min = self.get_parameter('workspace_x_min').value
@@ -86,6 +89,7 @@ class TeleopEndEffectorControl(Node):
         self.min_world_delta_z = float(self.get_parameter('min_world_delta_z').value)
         self.debug_seq_enable = bool(self.get_parameter('debug_seq_enable').value)
         self.debug_log_every_n = int(self.get_parameter('debug_log_every_n').value)
+        self.display_scale = float(self.get_parameter('display_scale').value)
         
         # Gripper command publishers
         self.left_gripper_pub = self.create_publisher(
@@ -767,8 +771,18 @@ class TeleopEndEffectorControl(Node):
         # Draw visualization
         image = self.draw_visualization(image, pose_results.pose_landmarks, hands_results)
         
-        # Show image
-        cv2.imshow('Teleoperation End-Effector Control', image)
+        # Show image (visual-only scaling)
+        display_image = image
+        try:
+            scale = float(self.display_scale)
+        except Exception:
+            scale = 1.0
+        if scale and abs(scale - 1.0) > 1e-3:
+            h, w = image.shape[:2]
+            new_w = max(1, int(w * scale))
+            new_h = max(1, int(h * scale))
+            display_image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+        cv2.imshow('Teleoperation End-Effector Control', display_image)
         
         # Handle keypress
         key = cv2.waitKey(1) & 0xFF

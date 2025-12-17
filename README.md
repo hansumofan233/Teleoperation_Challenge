@@ -65,7 +65,7 @@ Use three terminals:
 ros2 launch dual_ur3e_description dual_ur3e_display.launch.py
 ```
 
-- Terminal 2: Start end-effector command publisher (status prints and demo)
+- Terminal 2: Start end-effector command publisher (status prints)
 
 ```bash
 python3 scripts/endeffector_commander.py
